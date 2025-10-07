@@ -1,0 +1,51 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+[project]
+name = "charmed-temporal-uats"
+version = "1.23"
+requires-python = ">=3.10,<3.13"
+
+[project.optional-dependencies]
+lint = [
+	"ruff>=0.12.7",
+	"codespell>=2.3.0",
+	"shellcheck-py>=0.9.0.5",
+]
+
+format = [
+	"ruff>=0.12.7",
+]
+
+uats = [
+	"pytest>=7.4.0",
+	"jubilant>=1.0.1",
+]
+
+[tool.ruff]
+preview = true
+target-version = "py310"
+src = ["tests", "."]
+line-length = 99
+
+[tool.ruff.lint]
+ignore = [
+	"D107", # Ignore D107 Missing docstring in __init__
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+	"D1", # Ignore D* rules for undocumented public elements in code
+	"D417", # Ignore D417 Missing argument description in the docstring
+]
+
+[tool.ruff.lint.flake8-copyright]
+# Check for properly formatted copyright header in each file
+author = "Canonical Ltd."
+notice-rgx = "Copyright\\s\\d{4}([-,]\\d{4})*\\s+"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
