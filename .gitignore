@@ -5,7 +5,7 @@ __pycache__/
 .py[cod]
 .idea
 .vscode
-tests/*.egg_info/
+tests/*.egg-info/
 uv.lock.bak
-*.egg_info/
+*.egg-info/
 build/
