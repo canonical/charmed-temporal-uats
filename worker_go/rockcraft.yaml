@@ -20,15 +20,20 @@ services:
     command: "/app/scripts/start-worker.sh"
 
 parts:
-  worker-dependencies:
+  worker:
     plugin: go
     source: .
     build-snaps:
       - go/1.24/stable
-  worker-source-code:
+    organize:
+      bin/worker: bin/helloworld
+  scripts:
     plugin: dump
     source: .
     organize:
       scripts: app/scripts
     stage:
       - app
+    permissions:
+      - path: /app/scripts/start-worker.sh
+        mode: '755'

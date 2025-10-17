@@ -37,5 +37,5 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 func Activity(ctx context.Context, name string) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("HelloWorld activity executing", "name", name)
-	return "Hello " + name + "!", nil
+	return "Hello world to " + name + " in go!", nil
 }

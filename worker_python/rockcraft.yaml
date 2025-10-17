@@ -18,13 +18,18 @@ services:
     summary: "Temporal python worker"
     startup: disabled
     command: "/app/scripts/start-worker.sh"
+    environment:
+      PYTHONPATH: /usr/lib/python3/
 
 parts:
   worker-dependencies:
     plugin: python
     source: .
     stage-packages:
-      - python3.12-venv
+      - python3-venv
+    python-packages:
+      - temporal-lib-py>=1.8.0
+      - temporalio>=1.18.1
   ca-certificates:
     # This installs ca-certificates in the build env to populate our /etc/ssl/certs,
     # then copies just the ca-certificates.crt to the final image
@@ -37,8 +42,12 @@ parts:
   worker-source-code:
     plugin: dump
     source: .
+    source-type: local
     organize:
       scripts: app/scripts
       src: app/src
     stage:
       - app
+    permissions:
+      - path: app/scripts/*.sh
+        mode: '755'

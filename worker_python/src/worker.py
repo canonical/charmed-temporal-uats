@@ -5,31 +5,61 @@
 """Sample Temporal Worker."""
 
 import asyncio
+import dataclasses
+import datetime
 import logging
+import os
 
-import temporallib
+import concurrent.futures
 
-from activities.activity1 import compose_greeting
-from activities.activity2 import vault_test
-from activities.db_activity import database_test
-from workflows.workflow1 import DatabaseWorkflow, GreetingWorkflow, VaultWorkflow
+import temporalio.activity
+import temporalio.client
+import temporalio.worker
 
 logger = logging.getLogger(__name__)
 
 
+@dataclasses.dataclass
+class HelloWorldInput:
+    greeted: str
+
+
+# Basic activity that logs and does string concatenation
+@temporalio.activity.defn(name="compose_hello_world")
+async def compose_hello_world(arg: HelloWorldInput) -> str:
+    temporalio.activity.logger.info("Running activity with parameter %s" % arg)
+
+    return f"Hello World to {arg.greeted} in python"
+
+
+# Basic workflow that logs and invokes an activity
+@temporalio.workflow.defn(name="HelloWorldWorkflow")
+class HelloWorldWorkflow:
+    @temporalio.workflow.run
+    async def run(self, name: str) -> str:
+        temporalio.workflow.logger.info("Running HelloWorld workflow with parameter %s" % name)
+        return await temporalio.workflow.execute_activity(
+            compose_hello_world,
+            HelloWorldInput(greeted="UATs"),
+            start_to_close_timeout=datetime.timedelta(seconds=10),
+        )
+
+
 async def run_worker():
     """Connect Temporal worker to Temporal server."""
-    client = await temporallib.clientClient.connect(
-        client_opt=temporallib.client.Options(
-            encryption=temporallib.encryption.EncryptionOptions()
-        ),
-    )
+    target_host = os.environ.get("TEMPORAL_HOST")
+    namespace = os.environ.get("TEMPORAL_NAMESPACE")
+    task_queue = os.environ.get("TEMPORAL_QUEUE")
 
-    worker = temporallib.worker.Worker(
+    client = await temporalio.client.Client.connect(target_host, namespace=namespace)
+
+    worker = temporalio.worker.Worker(
         client=client,
-        workflows=[GreetingWorkflow, VaultWorkflow, DatabaseWorkflow],
-        activities=[compose_greeting, vault_test, database_test],
-        worker_opt=temporallib.worker.WorkerOptions(sentry=temporallib.worker.SentryOptions()),
+        workflows=[HelloWorldWorkflow],
+        activities=[compose_hello_world],
+        activity_executor=concurrent.futures.ThreadPoolExecutor(1),
+        max_concurrent_activities=1,
+        task_queue=task_queue,
     )
 
     await worker.run()

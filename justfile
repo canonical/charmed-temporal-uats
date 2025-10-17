@@ -54,7 +54,7 @@ create-models suffix="fixed" cleanup_all_uat_models="true":
     juju add-model cos-uats-${suffix}
 
 [private]
-deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgresql_channel="14/stable" openfga_channel="3/stable":
+deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgresql_channel="14/stable" openfga_channel="3.0/stable":
     #!/usr/bin/bash
     juju switch temporal-server-uats-${model_suffix}
 
@@ -75,13 +75,24 @@ deploy-cos model_suffix="fixed" cos_channel="latest/stable":
     juju offer cos-uats-${model_suffix}.prometheus:metrics-endpoint
     # TODO: add tracing
 
-# TODO: update latest/stable -> 1.0/stable
+# TODO: change 1.0/edge -> 1.0/stable
 [private]
-deploy-workers worker_python_image model_suffix="fixed" worker_channel="latest/stable":
-    # TODO: update images
-    juju deploy --model temporal-workers-uats-${model_suffix} temporal-worker-k8s temporal-worker-k8s-python --resource temporal-worker-image=${worker_python_image}
-    # juju deploy --model temporal-workers-uats temporal-worker-k8s temporal-worker-k8s-go --resource temporal-worker-image=go_worker_image
+deploy-workers worker_python_image worker_go_image model_suffix="fixed" worker_channel="1.0/edge":
+    #!/usr/bin/bash
+    juju switch temporal-workers-uats-${model_suffix}
 
+    juju deploy temporal-worker-k8s temporal-worker-k8s-python \
+        --channel ${worker_channel} \
+        --resource temporal-worker-image=${worker_python_image} \
+        --config host=temporal-k8s.temporal-server-uats-${model_suffix}:7233 \
+        --config queue=worker-python-queue \
+        --config namespace=worker-python-namespace
+    juju deploy temporal-worker-k8s temporal-worker-k8s-go \
+        --channel ${worker_channel} \
+        --resource temporal-worker-image=${worker_go_image} \
+        --config host=temporal-k8s.temporal-server-uats-${model_suffix}:7233 \
+        --config queue=worker-go-queue \
+        --config namespace=worker-go-namespace
 
 [private]
 integrate-applications model_suffix="fixed":
@@ -128,6 +139,13 @@ pack-worker-python debug="":
     debug_options=$(if [ -n "${debug}" ]; then echo "--debug"; fi)
     cd worker_python && rockcraft pack ${debug_options}
 
+pack-worker-go debug="":
+    #!/usr/bin/bash
+    set -x
+
+    debug_options=$(if [ -n "{debug}" ]; then echo "--debug"; fi)
+    cd worker_go && rockcraft pack ${debug_options}
+
 # Lint source code
 lint:
     tox -e lint
@@ -144,8 +162,12 @@ deploy-temporal:
     just pack-worker-python
     worker_python_rock_filepath=$(ls -d "$PWD"/worker_python/* | grep "\.rock")
 
+    just pack-worker-go
+    worker_go_rock_filepath=$(ls -d "$PWD"/worker_go/* | grep "\.rock")
+
     just stop-local-registry
     just push-to-local-registry ${worker_python_rock_filepath} worker-python dev
+    just push-to-local-registry ${worker_go_rock_filepath} worker-go dev
 
     suffix=$(head /dev/urandom | tr -dc a-z0-9 | head -c 10)
 
@@ -155,6 +177,6 @@ deploy-temporal:
 
     just deploy-temporal-server ${suffix}
     just deploy-cos ${suffix}
-    just deploy-workers localhost:5000/worker-python:dev ${suffix}
+    just deploy-workers localhost:5000/worker-python:dev localhost:5000/worker-go:dev ${suffix}
 
     just integrate-applications ${suffix}
