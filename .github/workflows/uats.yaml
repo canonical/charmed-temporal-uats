@@ -28,9 +28,11 @@ jobs:
 
           sudo snap install just --classic
 
-          sudo -E concierge prepare -p k8s
+          sudo -E concierge prepare -p k8s --extra-snaps=astral-uv
 
           sudo k8s enable ingress load-balancer
+
+          uv pip install tox
 
       - name: Install docker (after k8s bootstrapped)
         run: |
