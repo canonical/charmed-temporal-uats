@@ -29,7 +29,7 @@ class HelloWorldInput:
 async def compose_hello_world(arg: HelloWorldInput) -> str:
     temporalio.activity.logger.info("Running activity with parameter %s" % arg)
 
-    return f"Hello World to {arg.greeted} in python"
+    return f"Hello world to {arg.greeted} in python!"
 
 
 # Basic workflow that logs and invokes an activity
@@ -40,7 +40,7 @@ class HelloWorldWorkflow:
         temporalio.workflow.logger.info("Running HelloWorld workflow with parameter %s" % name)
         return await temporalio.workflow.execute_activity(
             compose_hello_world,
-            HelloWorldInput(greeted="UATs"),
+            HelloWorldInput(greeted=name),
             start_to_close_timeout=datetime.timedelta(seconds=10),
         )
 

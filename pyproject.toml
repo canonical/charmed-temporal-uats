@@ -19,8 +19,13 @@ format = [
 
 uats = [
 	"pytest>=7.4.0",
+	"pytest-asyncio>=1.2.0",
 	"jubilant>=1.0.1",
+	"temporalio>=1.18.1",
 ]
+
+[tool.setuptools.packages.find]
+exclude = ["worker_go", "worker_python"]
 
 [tool.ruff]
 preview = true
@@ -49,3 +54,7 @@ max-complexity = 10
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.pytest.ini_options]
+log_cli_level = "INFO"
+asyncio_mode = "auto"

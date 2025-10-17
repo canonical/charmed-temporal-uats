@@ -131,6 +131,11 @@ integrate-applications model_suffix="fixed":
 
     juju run temporal-k8s/0 create-authorization-model model="$(<./temporal-k8s-operator/temporal_auth_model.json)" --string-args=true
 
+    juju wait-for application temporal-admin-k8s --query='name == "temporal-admin-k8s" && status == "active"'
+
+    juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-go-namespace --retention 3d" --wait 1m
+    juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-python-namespace --retention 3d" --wait 1m 
+
 # Pack the python worker image
 pack-worker-python debug="":
     #!/usr/bin/bash
@@ -180,3 +185,23 @@ deploy-temporal:
     just deploy-workers localhost:5000/worker-python:dev localhost:5000/worker-go:dev ${suffix}
 
     just integrate-applications ${suffix}
+
+# Get model suffix for UAT models
+get-model-suffix:
+    #!/usr/bin/bash
+    set -euo pipefail
+
+    model_suffixes=$(juju models | grep uats | awk '{print $1}' | sed s/*//g | rev | cut -d- -f1 | rev | sort -u)
+
+    if [ "$(echo \"${model_suffixes} | wc -l)" != "1" ]; then
+        exit 1;
+    fi
+
+    echo "${model_suffixes}"
+
+# Execute the UATs
+uats server_model workers_model cos_model:
+    #!/usr/bin/bash
+    set -euxo pipefail
+
+    tox -e uats -- --server-model="${server_model}" --workers-model="${workers_model}" --cos-model="${cos_model}"
