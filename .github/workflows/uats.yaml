@@ -11,6 +11,9 @@ jobs:
     name: Run UATs
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    matrix:
+      uat:
+        - uats-namespace-isolation
 
     steps:
       - name: Checkout repository
@@ -34,6 +37,8 @@ jobs:
 
           uv tool install tox
 
+          just install-nginx-controller
+
       - name: Install docker (after k8s bootstrapped)
         run: |
           sudo snap install docker
@@ -48,4 +53,4 @@ jobs:
 
           model_suffix=$(just get-model-suffix)
 
-          just uats "temporal-server-uats-${model_suffix}" "temporal-workers-uats-${model_suffix}" "cos-uats-${model_suffix}"
+          just "${{ matrix.uat }}" "temporal-server-uats-${model_suffix}" "temporal-workers-uats-${model_suffix}" "cos-uats-${model_suffix}"

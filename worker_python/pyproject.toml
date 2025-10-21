@@ -5,7 +5,3 @@
 name = "worker-python"
 version = "1.0"
 requires-python = ">=3.10,<3.13"
-#dependencies = [
-#    "temporal-lib-py>=1.8.0",
-#    "temporalio>=1.18.1",
-#]

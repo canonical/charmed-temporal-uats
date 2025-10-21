@@ -6,6 +6,13 @@
 import pytest
 import jubilant
 
+PYTHON_NAMESPACE = "worker-python-namespace"
+GO_NAMESPACE = "worker-go-namespace"
+PYTHON_TASK_QUEUE = "worker-python-queue"
+GO_TASK_QUEUE = "worker-go-queue"
+PYTHON_WORKFLOW_CLASSNAME = "HelloWorldWorkflow"
+GO_WORKFLOW_CLASSNAME = "Workflow"
+
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -23,36 +30,6 @@ def pytest_addoption(parser):
         action="store",
         help="Model for COS related to temporal",
     )
-
-
-@pytest.fixture(scope="module")
-def python_namespace():
-    return "worker-python-namespace"
-
-
-@pytest.fixture(scope="module")
-def go_namespace():
-    return "worker-go-namespace"
-
-
-@pytest.fixture(scope="module")
-def python_task_queue():
-    return "worker-python-queue"
-
-
-@pytest.fixture(scope="module")
-def go_task_queue():
-    return "worker-go-queue"
-
-
-@pytest.fixture(scope="module")
-def python_workflow_classname():
-    return "HelloWorldWorkflow"
-
-
-@pytest.fixture(scope="module")
-def go_workflow_classname():
-    return "Workflow"
 
 
 @pytest.fixture(scope="module")

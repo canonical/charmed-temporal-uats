@@ -31,6 +31,42 @@ clone-temporal-k8s-repo branch="track/1.23":
     git clone --branch ${branch} --single-branch https://github.com/canonical/temporal-k8s-operator.git temporal-k8s-operator
 
 [private]
+install-nginx-controller:
+    #!/usr/bin/bash
+    set -euxo pipefail
+
+    if [ "$(kubectl get ingressclass | grep nginx | wc -l)" = "1" ]; then
+        echo "nginx ingress controller already installed"
+        exit 0
+    fi
+
+    rm -rf kuberenetes-ingress
+
+    git clone https://github.com/nginx/kubernetes-ingress.git --branch v5.2.1
+    cd kubernetes-ingress
+
+    kubectl apply -f deployments/common/ns-and-sa.yaml
+    kubectl apply -f deployments/rbac/rbac.yaml
+
+    kubectl apply -f deployments/common/nginx-config.yaml
+    kubectl apply -f deployments/common/ingress-class.yaml
+
+    kubectl apply -f config/crd/bases/k8s.nginx.org_virtualservers.yaml
+    kubectl apply -f config/crd/bases/k8s.nginx.org_virtualserverroutes.yaml
+    kubectl apply -f config/crd/bases/k8s.nginx.org_transportservers.yaml
+    kubectl apply -f config/crd/bases/k8s.nginx.org_policies.yaml
+    kubectl apply -f config/crd/bases/k8s.nginx.org_globalconfigurations.yaml
+
+    kubectl apply -f deployments/deployment/nginx-ingress.yaml
+
+    until kubectl -n nginx-ingress get pods | grep -q nginx-ingress; do
+        sleep 1
+    done
+
+    cd ..
+    rm -rf kubernetes-ingress
+
+[private]
 cleanup-models suffix="" cleanup_all_uat_models="true":
     #!/usr/bin/bash
     set -x
@@ -199,9 +235,13 @@ get-model-suffix:
 
     echo "${model_suffixes}"
 
-# Execute the UATs
-uats server_model workers_model cos_model:
+# Execute namespace isolation UATs
+uats-namespace-isolation server_model workers_model cos_model:
     #!/usr/bin/bash
     set -euxo pipefail
 
-    tox -e uats -- --server-model="${server_model}" --workers-model="${workers_model}" --cos-model="${cos_model}"
+    tox -e uats-namespace-isolation -- --server-model="${server_model}" --workers-model="${workers_model}" --cos-model="${cos_model}"
+
+# Execute all UATs
+uats server_model workers_model cos_model:
+    just uats-namespace-isolation ${server_model} ${workers_model} ${cos_model}
