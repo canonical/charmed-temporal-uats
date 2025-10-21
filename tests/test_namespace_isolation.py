@@ -139,6 +139,5 @@ async def test_namespace_isolation(juju_server_model: jubilant.Juju):
         "Workflow IDs in python and go namespaces not disjoint"
     )
 
-    assert sorted(python_run_ids) != sorted(go_run_ids), (
-        "Run IDs in python and go namespaces not disjoint"
-    )
+    for run_id in python_run_ids:
+        assert run_id not in go_run_ids, f"Python run id {run_id} found in go namespace"
