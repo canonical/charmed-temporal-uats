@@ -36,7 +36,7 @@ jobs:
 
           sudo -E concierge prepare -p k8s --extra-snaps=astral-uv
 
-          sudo k8s set load-balancer.l2-mode=true load-balancer.cidrs=10.1.0.0/24
+          sudo k8s set load-balancer.l2-mode=true load-balancer.cidrs=10.2.0.0/24
           sudo k8s enable ingress load-balancer
 
           uv tool install tox

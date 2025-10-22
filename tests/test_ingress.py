@@ -41,7 +41,10 @@ def test_tls_connection_to_ui_via_ingress(
         urllib3.connection.HTTPConnection.host = ""
         urllib3.connection.HTTPConnection._dns_host = load_balancer_ip
 
-        response = requests.get("https://temporal-ui-k8s", verify=ca_cert_file.name)
+        response = requests.get(
+            "https://temporal-ui-k8s",
+            verify=ca_cert_file.name,
+        )
 
         response.raise_for_status()
 
