@@ -40,33 +40,11 @@ install-nginx-controller:
         exit 0
     fi
 
-    rm -rf kuberenetes-ingress
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/refs/tags/controller-v1.13.3/deploy/static/provider/cloud/deploy.yaml
 
-    git clone https://github.com/nginx/kubernetes-ingress.git --branch v5.2.1
-    cd kubernetes-ingress
-
-    kubectl apply -f deployments/common/ns-and-sa.yaml
-    kubectl apply -f deployments/rbac/rbac.yaml
-
-    kubectl apply -f deployments/common/nginx-config.yaml
-    kubectl apply -f deployments/common/ingress-class.yaml
-
-    kubectl apply -f config/crd/bases/k8s.nginx.org_virtualservers.yaml
-    kubectl apply -f config/crd/bases/k8s.nginx.org_virtualserverroutes.yaml
-    kubectl apply -f config/crd/bases/k8s.nginx.org_transportservers.yaml
-    kubectl apply -f config/crd/bases/k8s.nginx.org_policies.yaml
-    kubectl apply -f config/crd/bases/k8s.nginx.org_globalconfigurations.yaml
-
-    kubectl apply -f deployments/deployment/nginx-ingress.yaml
-
-    until kubectl -n nginx-ingress get pods | grep -q nginx-ingress; do
+    until kubectl -n ingress-nginx get pods | grep -q ingress-nginx; do
         sleep 1
     done
-
-    kubectl create -f deployments/service/nodeport.yaml
-
-    cd ..
-    rm -rf kubernetes-ingress
 
 [private]
 cleanup-models suffix="" cleanup_all_uat_models="true":
@@ -109,7 +87,7 @@ deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgre
 
     juju deploy nginx-ingress-integrator temporal-ui-ingress --trust \
         --config ingress-class=nginx \
-        --config backend-protocol=HTTPS \
+        --config backend-protocol=HTTP \
         --config service-hostname=temporal-ui-k8s
 
     juju deploy self-signed-certificates
