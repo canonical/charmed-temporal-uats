@@ -42,8 +42,9 @@ install-nginx-controller:
 
     kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/refs/tags/controller-v1.13.3/deploy/static/provider/cloud/deploy.yaml
 
-    until kubectl -n ingress-nginx get pods | grep -q ingress-nginx; do
-        sleep 1
+    until [[ $(kubectl -n ingress-nginx get svc | grep -E 'ingress-nginx-controller\s' | awk '{print $4}') =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] ; do
+        echo "Waiting for ingress controller to be assigned an external ip"
+        sleep 5
     done
 
 [private]
