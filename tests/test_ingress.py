@@ -17,7 +17,7 @@ def test_tls_connection_to_ui_via_ingress(juju_server_model: jubilant.Juju):
             unit="self-signed-certificates/0",
             action="get-ca-certificate",
         )
-        assert action.status == "completed", "Action to retreive ca certificate did not complete"
+        assert action.status == "completed", "Action to retrieve ca certificate did not complete"
 
         ca_cert_file.write(action.results["ca-certificate"].encode("utf-8"))
         ca_cert_file.write("\n".encode("utf-8"))

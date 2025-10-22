@@ -63,6 +63,8 @@ install-nginx-controller:
         sleep 1
     done
 
+    kubectl create -f deployments/service/nodeport.yaml
+
     cd ..
     rm -rf kubernetes-ingress
 
