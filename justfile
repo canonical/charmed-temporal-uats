@@ -98,9 +98,19 @@ deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgre
 
     juju deploy openfga-k8s --channel "${openfga_channel}"
 
-    juju deploy temporal-k8s --channel "${temporal_channel}" --config num-history-shards=1 --config auth-enabled=true
+    juju deploy temporal-k8s --channel "${temporal_channel}" \
+        --config num-history-shards=1 \
+        --config auth-enabled=true
     juju deploy temporal-admin-k8s --channel "${temporal_channel}"
-    juju deploy temporal-ui-k8s --channel "${temporal_channel}"
+    juju deploy temporal-ui-k8s --channel "${temporal_channel}" \
+        --config tls-secret-name=""
+
+    juju deploy nginx-ingress-integrator temporal-ui-ingress --trust \
+        --config ingress-class=nginx \
+        --config backend-protocol=HTTPS \
+        --config service-hostname=temporal-ui-k8s
+
+    juju deploy self-signed-certificates
 
 [private]
 deploy-cos model_suffix="fixed" cos_channel="latest/stable":
@@ -146,6 +156,10 @@ integrate-applications model_suffix="fixed":
 
     juju integrate openfga-k8s:database postgresql-k8s:database
     juju integrate temporal-k8s:openfga openfga-k8s:openfga
+
+    juju integrate temporal-ui-ingress:certificates self-signed-certificates:certificates
+
+    juju integrate temporal-ui-k8s:nginx-route temporal-ui-ingress:nginx-route
 
     # Consume cos-uat offers in temporal-server-uats model
     juju consume admin/cos-uats-${model_suffix}.grafana
@@ -240,8 +254,21 @@ uats-namespace-isolation server_model workers_model cos_model:
     #!/usr/bin/bash
     set -euxo pipefail
 
-    tox -e uats-namespace-isolation -- --server-model="${server_model}" --workers-model="${workers_model}" --cos-model="${cos_model}"
+    tox -e uats-namespace-isolation -- \
+        --server-model="${server_model}" \
+        --workers-model="${workers_model}" \
+        --cos-model="${cos_model}"
+
+uats-ingress server_model workers_model cos_model:
+    #!/usr/bin/bash
+    set -euxo pipefail
+
+    tox -e uats-ingress -- \
+        --server-model="${server_model}" \
+        --workers-model="${workers_model}" \
+        --cos-model="${cos_model}"
 
 # Execute all UATs
 uats server_model workers_model cos_model:
     just uats-namespace-isolation ${server_model} ${workers_model} ${cos_model}
+    just uats-ingress ${server_model} ${workers_model} ${cos_model}

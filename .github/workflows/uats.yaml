@@ -15,6 +15,7 @@ jobs:
       matrix:
         uat:
           - uats-namespace-isolation
+          - uats-ingress
 
     steps:
       - name: Checkout repository
@@ -34,6 +35,7 @@ jobs:
 
           sudo -E concierge prepare -p k8s --extra-snaps=astral-uv
 
+          sudo k8s set load-balancer.l2-mode=true load-balancer.cidrs=10.1.0.83/32
           sudo k8s enable ingress load-balancer
 
           uv tool install tox
