@@ -231,7 +231,7 @@ get-model-suffix:
     echo "${model_suffixes}"
 
 # Execute namespace isolation UATs
-uats-namespace-isolation server_model workers_model cos_model:
+uats-namespace-isolation server_model="" workers_model="" cos_model="":
     #!/usr/bin/bash
     set -euxo pipefail
 
