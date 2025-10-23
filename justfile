@@ -235,21 +235,31 @@ uats-namespace-isolation server_model workers_model cos_model:
     #!/usr/bin/bash
     set -euxo pipefail
 
-    tox -e uats-namespace-isolation -- \
-        --server-model="${server_model}" \
-        --workers-model="${workers_model}" \
-        --cos-model="${cos_model}"
+    goss validate --retry-timeout=900s --sleep 60s --color --max-concurrent 10
 
-uats-ingress server_model workers_model cos_model:
+    model_suffix=$(just get-model-suffix)
+
+    tox -e uats-namespace-isolation -- \
+        --server-model="${server_model:-temporal-server-uats-${model_suffix}}" \
+        --workers-model="${workers_model:-temporal-workers-uats-${model_suffix}}" \
+        --cos-model="${cos_model:-cos-uats-${model_suffix}}"
+
+uats-ingress server_model="" workers_model="" cos_model="":
     #!/usr/bin/bash
     set -euxo pipefail
 
+    goss validate --retry-timeout=900s --sleep 60s --color --max-concurrent 10
+
+    model_suffix=$(just get-model-suffix)
+
+    juju wait-for application temporal-ui-ingress --query='name == "temporal-ui-ingress" && status == "active"'
+
     tox -e uats-ingress -- \
-        --server-model="${server_model}" \
-        --workers-model="${workers_model}" \
-        --cos-model="${cos_model}"
+        --server-model="${server_model:-temporal-server-uats-${model_suffix}}" \
+        --workers-model="${workers_model:-temporal-workers-uats-${model_suffix}}" \
+        --cos-model="${cos_model:-cos-uats-${model_suffix}}"
 
 # Execute all UATs
-uats server_model workers_model cos_model:
+uats server_model="" workers_model="" cos_model="":
     just uats-namespace-isolation ${server_model} ${workers_model} ${cos_model}
     just uats-ingress ${server_model} ${workers_model} ${cos_model}

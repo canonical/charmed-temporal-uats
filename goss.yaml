@@ -1,0 +1,25 @@
+command:
+  'postgres active':
+    exit-status: 0
+    exec: juju wait-for application --model "temporal-server-uats-$(just get-model-suffix)" postgresql-k8s --query='name == "postgresql-k8s" && status == "active"'
+  'temporal server active':
+    exit-status: 0
+    exec: juju wait-for application --model "temporal-server-uats-$(just get-model-suffix)" temporal-k8s --query='name == "temporal-k8s" && status == "active"'
+  'temporal ui active':
+    exit-status: 0
+    exec: juju wait-for application --model "temporal-server-uats-$(just get-model-suffix)" temporal-ui-k8s --query='name == "temporal-ui-k8s" && status == "active"'
+  'temporal admin active':
+    exit-status: 0
+    exec: juju wait-for application --model "temporal-server-uats-$(just get-model-suffix)" temporal-admin-k8s --query='name == "temporal-admin-k8s" && status == "active"'
+  'temporal python worker active':
+    exit-status: 0
+    exec: juju wait-for application --model "temporal-workers-uats-$(just get-model-suffix)" temporal-worker-k8s-python --query='name == "temporal-worker-k8s-python" && status == "active"'
+  'temporal go worker active':
+    exit-status: 0
+    exec: juju wait-for application --model "temporal-workers-uats-$(just get-model-suffix)" temporal-worker-k8s-go --query='name == "temporal-worker-k8s-go" && status == "active"'
+  'temporal ui nginx ingress active':
+    exit-status: 0
+    exec: juju wait-for application --model "temporal-server-uats-$(just get-model-suffix)" temporal-ui-ingress --query='name == "temporal-ui-ingress" && status == "active"'
+  'self signed certificates active':
+    exit-status: 0
+    exec: juju wait-for application --model "temporal-server-uats-$(just get-model-suffix)" self-signed-certificates --query='name == "self-signed-certificates" && status == "active"'

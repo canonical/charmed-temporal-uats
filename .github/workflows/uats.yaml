@@ -26,6 +26,10 @@ jobs:
         run: |
           set -e
 
+          goss_base_url="https://github.com/goss-org/goss/releases/latest/download"
+          curl -L ${goss_base_url}/goss-linux-amd64 -o /usr/local/bin/goss
+          chmod +rx /usr/local/bin/goss
+
           sudo apt-get purge $(dpkg -l | grep -i docker | awk '{print $2}')
           sudo apt-get purge containerd.io
           sudo rm -r /run/containerd
@@ -54,9 +58,4 @@ jobs:
         run: just deploy-temporal
 
       - name: Execute UATs
-        run: |
-          set -euxo pipefail
-
-          model_suffix=$(just get-model-suffix)
-
-          just "${{ matrix.uat }}" "temporal-server-uats-${model_suffix}" "temporal-workers-uats-${model_suffix}" "cos-uats-${model_suffix}"
+        run: just ${{ matrix.uat }}
