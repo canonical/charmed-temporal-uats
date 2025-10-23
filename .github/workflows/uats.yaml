@@ -39,6 +39,8 @@ jobs:
           sudo k8s set load-balancer.l2-mode=true load-balancer.cidrs=10.2.0.0/24
           sudo k8s enable ingress load-balancer
 
+          sudo k8s kubectl config view --raw > ~/.kube/config
+
           uv tool install tox
 
           just install-nginx-controller
