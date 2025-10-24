@@ -1,0 +1,57 @@
+name: UAT tests
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+on:
+  pull_request:
+
+jobs:
+  uats:
+    name: Run UATs
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        uat:
+          - uats-namespace-isolation
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up operator environment
+        run: |
+          set -e
+
+          sudo apt-get purge $(dpkg -l | grep -i docker | awk '{print $2}')
+          sudo apt-get purge containerd.io
+          sudo rm -r /run/containerd
+
+          sudo snap install concierge --classic
+
+          sudo snap install just --classic
+
+          sudo -E concierge prepare -p k8s --extra-snaps=astral-uv
+
+          sudo k8s enable ingress load-balancer
+
+          uv tool install tox
+
+          just install-nginx-controller
+
+      - name: Install docker (after k8s bootstrapped)
+        run: |
+          sudo snap install docker
+          sudo snap start docker
+
+      - name: Deploy Temporal models
+        run: just deploy-temporal
+
+      - name: Execute UATs
+        run: |
+          set -euxo pipefail
+
+          model_suffix=$(just get-model-suffix)
+
+          just "${{ matrix.uat }}" "temporal-server-uats-${model_suffix}" "temporal-workers-uats-${model_suffix}" "cos-uats-${model_suffix}"
