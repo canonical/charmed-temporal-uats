@@ -5,6 +5,7 @@
 
 import pytest
 import jubilant
+import lightkube
 
 PYTHON_NAMESPACE = "worker-python-namespace"
 GO_NAMESPACE = "worker-go-namespace"
@@ -30,6 +31,11 @@ def pytest_addoption(parser):
         action="store",
         help="Model for COS related to temporal",
     )
+
+
+@pytest.fixture(scope="module")
+def lightkube_client():
+    return lightkube.Client()
 
 
 @pytest.fixture(scope="module")

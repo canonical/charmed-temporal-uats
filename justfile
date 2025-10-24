@@ -40,31 +40,12 @@ install-nginx-controller:
         exit 0
     fi
 
-    rm -rf kuberenetes-ingress
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/refs/tags/controller-v1.13.3/deploy/static/provider/cloud/deploy.yaml
 
-    git clone https://github.com/nginx/kubernetes-ingress.git --branch v5.2.1
-    cd kubernetes-ingress
-
-    kubectl apply -f deployments/common/ns-and-sa.yaml
-    kubectl apply -f deployments/rbac/rbac.yaml
-
-    kubectl apply -f deployments/common/nginx-config.yaml
-    kubectl apply -f deployments/common/ingress-class.yaml
-
-    kubectl apply -f config/crd/bases/k8s.nginx.org_virtualservers.yaml
-    kubectl apply -f config/crd/bases/k8s.nginx.org_virtualserverroutes.yaml
-    kubectl apply -f config/crd/bases/k8s.nginx.org_transportservers.yaml
-    kubectl apply -f config/crd/bases/k8s.nginx.org_policies.yaml
-    kubectl apply -f config/crd/bases/k8s.nginx.org_globalconfigurations.yaml
-
-    kubectl apply -f deployments/deployment/nginx-ingress.yaml
-
-    until kubectl -n nginx-ingress get pods | grep -q nginx-ingress; do
-        sleep 1
+    until [[ $(kubectl -n ingress-nginx get svc | grep -E 'ingress-nginx-controller\s' | awk '{print $4}') =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] ; do
+        echo "Waiting for ingress controller to be assigned an external ip"
+        sleep 5
     done
-
-    cd ..
-    rm -rf kubernetes-ingress
 
 [private]
 cleanup-models suffix="" cleanup_all_uat_models="true":
@@ -90,7 +71,7 @@ create-models suffix="fixed" cleanup_all_uat_models="true":
     juju add-model cos-uats-${suffix}
 
 [private]
-deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgresql_channel="14/stable" openfga_channel="3.0/stable":
+deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgresql_channel="14/stable" openfga_channel="3.0/stable" nginx_ingress_integrator_channel="latest/stable" self_signed_certificates_channel="1/stable":
     #!/usr/bin/bash
     juju switch temporal-server-uats-${model_suffix}
 
@@ -98,9 +79,20 @@ deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgre
 
     juju deploy openfga-k8s --channel "${openfga_channel}"
 
-    juju deploy temporal-k8s --channel "${temporal_channel}" --config num-history-shards=1 --config auth-enabled=true
+    juju deploy temporal-k8s --channel "${temporal_channel}" \
+        --config num-history-shards=1 \
+        --config auth-enabled=true
     juju deploy temporal-admin-k8s --channel "${temporal_channel}"
-    juju deploy temporal-ui-k8s --channel "${temporal_channel}"
+    juju deploy temporal-ui-k8s --channel "${temporal_channel}" \
+        --config tls-secret-name=""
+
+    juju deploy nginx-ingress-integrator temporal-ui-ingress \
+        --channel "${nginx_ingress_integrator_channel}" --trust \
+        --config ingress-class=nginx \
+        --config backend-protocol=HTTP \
+        --config service-hostname=temporal-ui-k8s
+
+    juju deploy self-signed-certificates --channel "${self_signed_certificates_channel}"
 
 [private]
 deploy-cos model_suffix="fixed" cos_channel="latest/stable":
@@ -146,6 +138,10 @@ integrate-applications model_suffix="fixed":
 
     juju integrate openfga-k8s:database postgresql-k8s:database
     juju integrate temporal-k8s:openfga openfga-k8s:openfga
+
+    juju integrate temporal-ui-ingress:certificates self-signed-certificates:certificates
+
+    juju integrate temporal-ui-k8s:nginx-route temporal-ui-ingress:nginx-route
 
     # Consume cos-uat offers in temporal-server-uats model
     juju consume admin/cos-uats-${model_suffix}.grafana
@@ -236,12 +232,35 @@ get-model-suffix:
     echo "${model_suffixes}"
 
 # Execute namespace isolation UATs
-uats-namespace-isolation server_model workers_model cos_model:
+uats-namespace-isolation server_model="" workers_model="" cos_model="":
     #!/usr/bin/bash
     set -euxo pipefail
 
-    tox -e uats-namespace-isolation -- --server-model="${server_model}" --workers-model="${workers_model}" --cos-model="${cos_model}"
+    goss validate --retry-timeout=900s --sleep 60s --color --max-concurrent 10
+
+    model_suffix=$(just get-model-suffix)
+
+    tox -e uats-namespace-isolation -- \
+        --server-model="${server_model:-temporal-server-uats-${model_suffix}}" \
+        --workers-model="${workers_model:-temporal-workers-uats-${model_suffix}}" \
+        --cos-model="${cos_model:-cos-uats-${model_suffix}}"
+
+uats-ingress server_model="" workers_model="" cos_model="":
+    #!/usr/bin/bash
+    set -euxo pipefail
+
+    goss validate --retry-timeout=900s --sleep 60s --color --max-concurrent 10
+
+    model_suffix=$(just get-model-suffix)
+
+    juju wait-for application temporal-ui-ingress --query='name == "temporal-ui-ingress" && status == "active"'
+
+    tox -e uats-ingress -- \
+        --server-model="${server_model:-temporal-server-uats-${model_suffix}}" \
+        --workers-model="${workers_model:-temporal-workers-uats-${model_suffix}}" \
+        --cos-model="${cos_model:-cos-uats-${model_suffix}}"
 
 # Execute all UATs
-uats server_model workers_model cos_model:
+uats server_model="" workers_model="" cos_model="":
     just uats-namespace-isolation ${server_model} ${workers_model} ${cos_model}
+    just uats-ingress ${server_model} ${workers_model} ${cos_model}

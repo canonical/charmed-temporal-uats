@@ -1,8 +1,5 @@
 name: UAT tests
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-
 on:
   pull_request:
 
@@ -15,6 +12,11 @@ jobs:
       matrix:
         uat:
           - uats-namespace-isolation
+          - uats-ingress
+      fail-fast: false
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.uat }}
+      cancel-in-progress: true
 
     steps:
       - name: Checkout repository
@@ -23,6 +25,11 @@ jobs:
       - name: Set up operator environment
         run: |
           set -e
+
+          # FIXME: install via the goss snap when available
+          goss_base_url="https://github.com/goss-org/goss/releases/latest/download"
+          curl -L ${goss_base_url}/goss-linux-amd64 -o /usr/local/bin/goss
+          chmod +rx /usr/local/bin/goss
 
           sudo apt-get purge $(dpkg -l | grep -i docker | awk '{print $2}')
           sudo apt-get purge containerd.io
@@ -34,7 +41,10 @@ jobs:
 
           sudo -E concierge prepare -p k8s --extra-snaps=astral-uv
 
+          sudo k8s set load-balancer.l2-mode=true load-balancer.cidrs=10.2.0.0/24
           sudo k8s enable ingress load-balancer
+
+          sudo k8s kubectl config view --raw > ~/.kube/config
 
           uv tool install tox
 
@@ -49,9 +59,4 @@ jobs:
         run: just deploy-temporal
 
       - name: Execute UATs
-        run: |
-          set -euxo pipefail
-
-          model_suffix=$(just get-model-suffix)
-
-          just "${{ matrix.uat }}" "temporal-server-uats-${model_suffix}" "temporal-workers-uats-${model_suffix}" "cos-uats-${model_suffix}"
+        run: just ${{ matrix.uat }}
