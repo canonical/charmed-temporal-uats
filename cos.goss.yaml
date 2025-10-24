@@ -1,0 +1,19 @@
+command:
+  'alert manager active':
+    exit-status: 0
+    exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" alertmanager --query='name == "alertmanager" && status == "active"'
+  'catalogue active':
+    exit-status: 0
+    exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" catalogue --query='name == "catalogue" && status == "active"'
+  'grafana active':
+    exit-status: 0
+    exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" grafana --query='name == "grafana" && status == "active"'
+  'loki active':
+    exit-status: 0
+    exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" loki --query='name == "loki" && status == "active"'
+  'prometheus active':
+    exit-status: 0
+    exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" prometheus --query='name == "prometheus" && status == "active"'
+  'traefik active':
+    exit-status: 0
+    exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" traefik --query='name == "traefik" && status == "active"'
