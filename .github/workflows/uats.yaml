@@ -26,6 +26,7 @@ jobs:
         run: |
           set -e
 
+          # FIXME: install via the goss snap when available
           goss_base_url="https://github.com/goss-org/goss/releases/latest/download"
           curl -L ${goss_base_url}/goss-linux-amd64 -o /usr/local/bin/goss
           chmod +rx /usr/local/bin/goss

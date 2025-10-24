@@ -71,7 +71,7 @@ create-models suffix="fixed" cleanup_all_uat_models="true":
     juju add-model cos-uats-${suffix}
 
 [private]
-deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgresql_channel="14/stable" openfga_channel="3.0/stable":
+deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgresql_channel="14/stable" openfga_channel="3.0/stable" nginx_ingress_integrator_channel="latest/stable" self_signed_certificates_channel="1/stable":
     #!/usr/bin/bash
     juju switch temporal-server-uats-${model_suffix}
 
@@ -86,12 +86,13 @@ deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgre
     juju deploy temporal-ui-k8s --channel "${temporal_channel}" \
         --config tls-secret-name=""
 
-    juju deploy nginx-ingress-integrator temporal-ui-ingress --trust \
+    juju deploy nginx-ingress-integrator temporal-ui-ingress \
+        --channel "${nginx_ingress_integrator_channel}" --trust \
         --config ingress-class=nginx \
         --config backend-protocol=HTTP \
         --config service-hostname=temporal-ui-k8s
 
-    juju deploy self-signed-certificates
+    juju deploy self-signed-certificates --channel "${self_signed_certificates_channel}"
 
 [private]
 deploy-cos model_suffix="fixed" cos_channel="latest/stable":
