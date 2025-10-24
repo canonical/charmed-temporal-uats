@@ -66,3 +66,18 @@ def juju_workers_model(request: pytest.FixtureRequest):
     if request.session.testsfailed:
         log = workers_model.debug_log(limit=100)
         print(log, end="--- END OF WORKERS MODEL LOGS ---")
+
+
+@pytest.fixture(scope="module")
+def cos_model(request: pytest.FixtureRequest):
+    cos_model_name = request.config.getoption("--cos-model")
+
+    cos_model = jubilant.Juju(model=cos_model_name)
+
+    cos_model.wait_timeout = 10 * 60
+
+    yield cos_model
+
+    if request.session.testsfailed:
+        log = cos_model.debug_log(limit=100)
+        print(log, end="--- END OF WORKERS MODEL LOGS ---")

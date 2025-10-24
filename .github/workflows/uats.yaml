@@ -13,6 +13,7 @@ jobs:
         uat:
           - uats-namespace-isolation
           - uats-ingress
+          - uats-cos
       fail-fast: false
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.uat }}
