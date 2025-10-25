@@ -60,3 +60,7 @@ jobs:
 
       - name: Execute UATs
         run: just ${{ matrix.uat }}
+
+      - name: Juju status (if failure)
+        if: failure()
+        run: just juju-status-all-models

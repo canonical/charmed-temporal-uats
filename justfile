@@ -67,8 +67,30 @@ create-models suffix="fixed" cleanup_all_uat_models="true":
     just cleanup-models ${suffix} ${cleanup_all_uat_models}
 
     juju add-model temporal-server-uats-${suffix}
+    juju model-config update-status-hook-interval=10s
+    juju model-config automatically-retry-hooks=false
+
     juju add-model temporal-workers-uats-${suffix}
+    juju model-config automatically-retry-hooks=false
+
     juju add-model cos-uats-${suffix}
+    juju model-config automatically-retry-hooks=false
+
+[private]
+destroy-server-model:
+    juju destroy-model --force --destroy-storage --no-prompt "temporal-server-uats-$(just get-model-suffix)"
+
+[private]
+destroy-workers-model:
+    juju destroy-model --force --destroy-storage --no-prompt "temporal-workers-uats-$(just get-model-suffix)"
+
+[private]
+destroy-cos-model:
+    juju destroy-model --force --destroy-storage --no-prompt "cos-uats-$(just get-model-suffix)"
+
+[parallel]
+[private]
+destroy-all-models: destroy-server-model destroy-workers-model destroy-cos-model
 
 [private]
 deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgresql_channel="14/stable" openfga_channel="3.0/stable" nginx_ingress_integrator_channel="latest/stable" self_signed_certificates_channel="1/stable":
@@ -81,7 +103,7 @@ deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgre
 
     juju deploy temporal-k8s --channel "${temporal_channel}" \
         --config num-history-shards=1 \
-        --config auth-enabled=true
+        --config auth-enabled=false
     juju deploy temporal-admin-k8s --channel "${temporal_channel}"
     juju deploy temporal-ui-k8s --channel "${temporal_channel}" \
         --config tls-secret-name=""
@@ -153,20 +175,25 @@ integrate-applications model_suffix="fixed":
     juju integrate temporal-k8s:logging loki
     juju integrate temporal-k8s:metrics-endpoint prometheus
 
-    # TODO: add juju wait-for to ensure temporal-k8s ready for openfga config
+    juju switch temporal-workers-uats-${model_suffix}
 
-    trap 'rm -rf ./temporal-k8s-operator' EXIT
+    # Consume cos-uat offers in temporal-workers-uats model
+    # juju consume admin/cos-uats-${model_suffix}.grafana
+    # juju consume admin/cos-uats-${model_suffix}.loki
+    juju consume admin/cos-uats-${model_suffix}.prometheus
 
-    just clone-temporal-k8s-repo
+    # Integrate Temporal python worker charm with COS
+    juju integrate temporal-worker-k8s-python:metrics-endpoint prometheus
 
-    juju wait-for application temporal-k8s --query='name == "temporal-k8s" && status == "blocked" && forEach(units, unit => unit.workload-message == "missing openfga authorization model")'
-
-    juju run temporal-k8s/0 create-authorization-model model="$(<./temporal-k8s-operator/temporal_auth_model.json)" --string-args=true
+[private]
+create-namespaces:
+    #!/usr/bin/bash
+    juju switch "temporal-server-uats-$(just get-model-suffix)"
 
     juju wait-for application temporal-admin-k8s --query='name == "temporal-admin-k8s" && status == "active"'
 
     juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-go-namespace --retention 3d" --wait 1m
-    juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-python-namespace --retention 3d" --wait 1m 
+    juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-python-namespace --retention 3d" --wait 1m
 
 # Pack the python worker image
 pack-worker-python debug="":
@@ -208,8 +235,6 @@ deploy-temporal:
 
     suffix=$(head /dev/urandom | tr -dc a-z0-9 | head -c 10)
 
-    # trap 'just cleanup-models ${suffix} false' ERR
-
     just create-models ${suffix}
 
     just deploy-temporal-server ${suffix}
@@ -217,6 +242,8 @@ deploy-temporal:
     just deploy-workers localhost:5000/worker-python:dev localhost:5000/worker-go:dev ${suffix}
 
     just integrate-applications ${suffix}
+
+    just create-namespaces
 
 # Get model suffix for UAT models
 get-model-suffix:
@@ -276,3 +303,11 @@ uats server_model="" workers_model="" cos_model="":
     just uats-namespace-isolation ${server_model} ${workers_model} ${cos_model}
     just uats-ingress ${server_model} ${workers_model} ${cos_model}
     just uats-cos ${server_model} ${workers_model} ${cos_model}
+
+juju-status-all-models:
+    #!/usr/bin/bash
+    model_suffix=$(just get-model-suffix)
+
+    juju status --model "temporal-server-uats-${model_suffix}" --color --relations --storage
+    juju status --model "temporal-workers-uats-${model_suffix}" --color --relations --storage
+    juju status --model "cos-uats-${model_suffix}" --color --relations --storage

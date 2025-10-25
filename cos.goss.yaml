@@ -17,3 +17,27 @@ command:
   'traefik active':
     exit-status: 0
     exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" traefik --query='name == "traefik" && status == "active"'
+  prometheus-reachable:
+    exit-status: 0
+    exec: |
+      model_suffix=$(just get-model-suffix)
+      prometheus_ip=$(juju status --model "cos-uats-${model_suffix}" | grep prometheus/0 | awk '{print $4}')
+      curl -s -o /dev/null -w "%{http_code}" "http://${prometheus_ip}:9090/"
+    stdout:
+    - '302'
+  grafana-reachable:
+    exit-status: 0
+    exec: |
+      model_suffix=$(just get-model-suffix)
+      grafana_ip=$(juju status --model "cos-uats-${model_suffix}" | grep grafana/0 | awk '{print $4}')
+      curl -s -o /dev/null -w "%{http_code}" "http://${grafana_ip}:3000/"
+    stdout:
+    - '302'
+  loki-reachable:
+    exit-status: 0
+    exec: |
+      model_suffix=$(just get-model-suffix)
+      loki_ip=$(juju status --model "cos-uats-${model_suffix}" | grep loki/0 | awk '{print $4}')
+      curl -s -o /dev/null -w "%{http_code}" "http://${loki_ip}:3100/"
+    stdout:
+    - '404'
