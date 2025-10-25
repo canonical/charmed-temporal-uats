@@ -68,13 +68,12 @@ create-models suffix="fixed" cleanup_all_uat_models="true":
 
     juju add-model temporal-server-uats-${suffix}
     juju model-config update-status-hook-interval=10s
-    juju model-config automatically-retry-hooks=false
 
     juju add-model temporal-workers-uats-${suffix}
-    juju model-config automatically-retry-hooks=false
+    juju model-config update-status-hook-interval=10s
 
     juju add-model cos-uats-${suffix}
-    juju model-config automatically-retry-hooks=false
+    juju model-config update-status-hook-interval=10s
 
 [private]
 destroy-server-model:
@@ -328,3 +327,6 @@ get-system-state:
 
     sudo k8s status
     echo "---"
+
+    df -h
+    echo "---

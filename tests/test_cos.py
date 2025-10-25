@@ -74,6 +74,15 @@ def test_temporal_server_dashboard_created(cos_model: jubilant.Juju):
         == 1
     ), "Missing Temporal Server Metrics dashboard"
 
+    assert (
+        len([
+            dashboard["title"]
+            for dashboard in response_data
+            if dashboard["title"] == "Temporal Worker SDK Metrics"
+        ])
+        == 1
+    ), "Missing Temporal Worker SDK Metrics dashboard"
+
 
 def test_temporal_metrics_exist(cos_model: jubilant.Juju):
     """Test to ensure Temporal metrics exist in COS."""
@@ -105,6 +114,15 @@ def test_temporal_metrics_exist(cos_model: jubilant.Juju):
         len([metric for metric in response_data["data"] if metric.startswith("activity_")]) > 0
     ), "Missing activity metrics"
 
+    assert (
+        len([
+            metric
+            for metric in response_data["data"]
+            if metric.startswith("custom_activity_schedule_to_start_")
+        ])
+        > 0
+    ), "Missing worker workflow metrics"
+
 
 def test_temporal_log_stream_exists(cos_model: jubilant.Juju):
     """Test to ensure Temporal log stream exists in COS."""
@@ -130,4 +148,18 @@ def test_temporal_log_stream_exists(cos_model: jubilant.Juju):
     )
     assert temporal_server_stream["juju_application"] == "temporal-k8s", (
         "Unexpected application name in temporal server loki stream"
+    )
+
+    temporal_worker_python_stream = [
+        stream
+        for stream in response_data["data"]
+        if stream.get("charm") == "temporal-worker-k8s"
+        and stream.get("juju_application") == "temporal-worker-k8s-python"
+    ][0]
+
+    assert temporal_worker_python_stream["pebble_service"] == "temporal-worker", (
+        "Unexpected pebble service in temporal worker python loki stream"
+    )
+    assert temporal_server_stream["juju_unit"] == "temporal-worker-k8s-python/0", (
+        "Unexpected unit name in temporal worker python loki stream"
     )
