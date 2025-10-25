@@ -160,6 +160,6 @@ def test_temporal_log_stream_exists(cos_model: jubilant.Juju):
     assert temporal_worker_python_stream["pebble_service"] == "temporal-worker", (
         "Unexpected pebble service in temporal worker python loki stream"
     )
-    assert temporal_server_stream["juju_unit"] == "temporal-worker-k8s-python/0", (
+    assert temporal_worker_python_stream["juju_unit"] == "temporal-worker-k8s-python/0", (
         "Unexpected unit name in temporal worker python loki stream"
     )

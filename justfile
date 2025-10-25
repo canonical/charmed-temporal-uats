@@ -92,13 +92,11 @@ destroy-cos-model:
 destroy-all-models: destroy-server-model destroy-workers-model destroy-cos-model
 
 [private]
-deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgresql_channel="14/stable" openfga_channel="3.0/stable" nginx_ingress_integrator_channel="latest/stable" self_signed_certificates_channel="1/stable":
+deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgresql_channel="14/stable" nginx_ingress_integrator_channel="latest/stable" self_signed_certificates_channel="1/stable":
     #!/usr/bin/bash
     juju switch temporal-server-uats-${model_suffix}
 
     juju deploy postgresql-k8s --channel "${postgresql_channel}" --trust
-
-    juju deploy openfga-k8s --channel "${openfga_channel}"
 
     juju deploy temporal-k8s --channel "${temporal_channel}" \
         --config num-history-shards=1 \
@@ -156,9 +154,6 @@ integrate-applications model_suffix="fixed":
     juju integrate temporal-k8s:admin temporal-admin-k8s:admin
 
     juju integrate temporal-k8s:ui temporal-ui-k8s:ui
-
-    juju integrate openfga-k8s:database postgresql-k8s:database
-    juju integrate temporal-k8s:openfga openfga-k8s:openfga
 
     juju integrate temporal-ui-ingress:certificates self-signed-certificates:certificates
 
@@ -286,29 +281,18 @@ uats-ingress server_model="" workers_model="" cos_model="":
         --workers-model="${workers_model:-temporal-workers-uats-${model_suffix}}" \
         --cos-model="${cos_model:-cos-uats-${model_suffix}}"
 
-[private]
-check-temporal-integrated-with-prometheus:
-    #!/usr/bin/bash
-    set -euxo pipefail
-
-    model_suffix=$(just get-model-suffix)
-    prometheus_ip=$(juju status --model "cos-uats-${model_suffix}" | grep prometheus/0 | awk '{print $4}')
-
-    echo $(curl -s "http://${prometheus_ip}:9090/api/v1/label/__name__/values" | grep -q "temporal_")
-
 uats-cos server_model="" workers_model="" cos_model="":
     #!/usr/bin/bash
     set -euxo pipefail
 
     model_suffix=$(just get-model-suffix)
 
-    goss --gossfile goss.yaml --gossfile cos.goss.yaml validate --retry-timeout=900s --sleep 60s --color
-
     juju run --model "temporal-server-uats-${model_suffix}" temporal-admin-k8s/0 \
         cli \
         args='workflow start --namespace worker-python-namespace --task-queue worker-python-queue --type HelloWorldWorkflow --input "test-cos"' --wait 1m
 
-    retry --times 10 --delay 60 -- timeout 5 just check-temporal-integrated-with-prometheus
+
+    goss --gossfile goss.yaml --gossfile cos.goss.yaml validate --retry-timeout=900s --sleep 60s --color
 
     tox -e uats-cos -- \
         --server-model="${server_model:-temporal-server-uats-${model_suffix}}" \
