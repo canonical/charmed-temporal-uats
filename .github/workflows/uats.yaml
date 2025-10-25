@@ -30,7 +30,6 @@ jobs:
           sudo apt autoremove
           sudo apt clean
           sudo apt autoclean
-          sudo apt remove --purge linux-image-X.X.XX-XX-generic
 
           df -h
 
