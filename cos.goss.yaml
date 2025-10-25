@@ -23,7 +23,7 @@ command:
     exec: |
       model_suffix=$(just get-model-suffix)
       grafana_ip=$(juju status --model "cos-uats-${model_suffix}" | grep grafana/0 | awk '{print $4}')
-      grafana_admin_password=$(juju run --model "cos-uats-${model_suffix}" --format json grafana/0 get-admin-password | jq .admin-password)
+      grafana_admin_password=$(juju run --model "cos-uats-${model_suffix}" --format json grafana/0 get-admin-password | jq '."grafana/0".results."admin-password"')
       curl -s "http://admin:${grafana_admin_password}@${grafana_ip}:3000/api/search"
     stdout:
     - Temporal Service Metrics
