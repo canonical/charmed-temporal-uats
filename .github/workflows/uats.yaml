@@ -20,6 +20,21 @@ jobs:
       cancel-in-progress: true
 
     steps:
+      - name: Maximize disk pace
+        run: |
+          df -h
+          echo "---"
+
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          echo "---"
+
+          df -h
+          echo "---"
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -49,16 +64,6 @@ jobs:
           uv tool install tox
 
           just install-nginx-controller
-
-      - name: Free up disk space
-        run: |
-          df -h
-
-          sudo apt autoremove
-          sudo apt clean
-          sudo apt autoclean
-
-          df -h
 
       - name: Install docker (after k8s bootstrapped)
         run: |
