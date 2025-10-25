@@ -314,6 +314,10 @@ uats server_model="" workers_model="" cos_model="":
 
 get-system-state:
     #!/usr/bin/bash
+
+    df -h
+    echo "---"
+
     model_suffix=$(just get-model-suffix)
 
     juju status --model "temporal-server-uats-${model_suffix}" --color --relations --storage
@@ -327,6 +331,3 @@ get-system-state:
 
     sudo k8s status
     echo "---"
-
-    df -h
-    echo "---

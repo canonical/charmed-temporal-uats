@@ -23,6 +23,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Free up disk space
+        run: |
+          df -h
+
+          sudo apt autoremove
+          sudo apt clean
+          sudo apt autoclean
+          sudo apt remove --purge linux-image-X.X.XX-XX-generic
+
+          df -h
+
       - name: Set up operator environment
         run: |
           set -e
