@@ -33,7 +33,7 @@ command:
     exec: |
       model_suffix=$(just get-model-suffix)
       loki_ip=$(juju status --model "cos-uats-${model_suffix}" | grep loki/0 | awk '{print $4}')
-      curl -s "http://{loki_ip}:3100/loki/api/v1/series"
+      curl -s "http://${loki_ip}:3100/loki/api/v1/series"
     stdout:
     - temporal-k8s
     - temporal-worker-k8s-python
