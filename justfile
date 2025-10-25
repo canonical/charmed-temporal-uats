@@ -286,6 +286,16 @@ uats-ingress server_model="" workers_model="" cos_model="":
         --workers-model="${workers_model:-temporal-workers-uats-${model_suffix}}" \
         --cos-model="${cos_model:-cos-uats-${model_suffix}}"
 
+[private]
+check-temporal-integrated-with-prometheus:
+    #!/usr/bin/bash
+    set -euxo pipefail
+
+    model_suffix=$(just get-model-suffix)
+    prometheus_ip=$(juju status --model "cos-uats-${model_suffix}" | grep prometheus/0 | awk '{print $4}')
+
+    echo $(curl -s "http://${prometheus_ip}:9090/api/v1/label/__name__/values" | grep -q "temporal_")
+
 uats-cos server_model="" workers_model="" cos_model="":
     #!/usr/bin/bash
     set -euxo pipefail
@@ -298,8 +308,7 @@ uats-cos server_model="" workers_model="" cos_model="":
         cli \
         args='workflow start --namespace worker-python-namespace --task-queue worker-python-queue --type HelloWorldWorkflow --input "test-cos"' --wait 1m
 
-    # Enough time to stream relevant configs to COS and metrics from workers
-    sleep 120
+    retry --times 10 --delay 60 -- timeout 5 just check-temporal-integrated-with-prometheus
 
     tox -e uats-cos -- \
         --server-model="${server_model:-temporal-server-uats-${model_suffix}}" \

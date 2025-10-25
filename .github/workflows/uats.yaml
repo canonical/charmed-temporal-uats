@@ -65,6 +65,8 @@ jobs:
 
           just install-nginx-controller
 
+          sudo apt install retry
+
       - name: Install docker (after k8s bootstrapped)
         run: |
           sudo snap install docker
