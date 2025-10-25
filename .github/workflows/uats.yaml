@@ -14,6 +14,9 @@ jobs:
           - uats-namespace-isolation
           - uats-ingress
           - uats-cos
+        include:
+          - uat: uats-cos
+            runs-on: ubuntu-latest-8-core
       fail-fast: false
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.uat }}

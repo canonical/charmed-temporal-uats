@@ -178,12 +178,14 @@ integrate-applications model_suffix="fixed":
     juju switch temporal-workers-uats-${model_suffix}
 
     # Consume cos-uat offers in temporal-workers-uats model
-    # juju consume admin/cos-uats-${model_suffix}.grafana
-    # juju consume admin/cos-uats-${model_suffix}.loki
+    juju consume admin/cos-uats-${model_suffix}.grafana
+    juju consume admin/cos-uats-${model_suffix}.loki
     juju consume admin/cos-uats-${model_suffix}.prometheus
 
     # Integrate Temporal python worker charm with COS
     juju integrate temporal-worker-k8s-python:metrics-endpoint prometheus
+    juju integrate temporal-worker-k8s-python:logging loki
+    juju integrate temporal-worker-k8s-python:grafana-dashboard grafana
 
 [private]
 create-namespaces:
