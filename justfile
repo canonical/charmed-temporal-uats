@@ -291,9 +291,16 @@ uats-cos server_model="" workers_model="" cos_model="":
     #!/usr/bin/bash
     set -euxo pipefail
 
-    goss --gossfile goss.yaml --gossfile cos.goss.yaml validate --retry-timeout=1800s --sleep 60s --color
-
     model_suffix=$(just get-model-suffix)
+
+    goss --gossfile goss.yaml --gossfile cos.goss.yaml validate --retry-timeout=900s --sleep 60s --color
+
+    juju run --model "temporal-server-uats-${model_suffix}" temporal-admin-k8s/0 \
+        cli \
+        args='workflow start --namespace worker-python-namespace --task-queue worker-python-queue --type HelloWorldWorkflow --input "test-cos"' --wait 1m
+
+    # Enough time to stream relevant configs to COS and metrics from workers
+    sleep 120
 
     tox -e uats-cos -- \
         --server-model="${server_model:-temporal-server-uats-${model_suffix}}" \
@@ -306,10 +313,18 @@ uats server_model="" workers_model="" cos_model="":
     just uats-ingress ${server_model} ${workers_model} ${cos_model}
     just uats-cos ${server_model} ${workers_model} ${cos_model}
 
-juju-status-all-models:
+get-system-state:
     #!/usr/bin/bash
     model_suffix=$(just get-model-suffix)
 
     juju status --model "temporal-server-uats-${model_suffix}" --color --relations --storage
+    echo "---"
+
     juju status --model "temporal-workers-uats-${model_suffix}" --color --relations --storage
+    echo "---"
+
     juju status --model "cos-uats-${model_suffix}" --color --relations --storage
+    echo "---"
+
+    sudo k8s status
+    echo "---"

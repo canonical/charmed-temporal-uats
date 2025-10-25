@@ -79,7 +79,7 @@ async def run_worker():
 
     runtime = temporalio.runtime.Runtime(
         telemetry=temporalio.runtime.TelemetryConfig(
-            metrics=temporalio.runtime.PrometheusConfig(bind_address="0.0.0.0:9090")
+            metrics=temporalio.runtime.PrometheusConfig(bind_address="0.0.0.0:9000")
         )
     )
 
@@ -94,6 +94,7 @@ async def run_worker():
         activity_executor=concurrent.futures.ThreadPoolExecutor(1),
         max_concurrent_activities=1,
         task_queue=task_queue,
+        interceptors=[CustomInterceptor()],
     )
 
     await worker.run()
