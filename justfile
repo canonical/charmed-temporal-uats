@@ -294,8 +294,10 @@ uats-cos server_model="" workers_model="" cos_model="":
         cli \
         args='workflow start --namespace worker-python-namespace --task-queue worker-python-queue --type HelloWorldWorkflow --input "test-cos"' --wait 1m
 
+    # Give some time to execute workflow and for metrics to flow to COS
+    sleep 60
 
-    goss --gossfile goss.yaml --gossfile cos.goss.yaml validate --retry-timeout=900s --sleep 60s --color
+    goss --gossfile goss.yaml --gossfile cos.goss.yaml validate --retry-timeout=1200s --sleep 60s --color
 
     tox -e uats-cos -- \
         --server-model="${server_model:-temporal-server-uats-${model_suffix}}" \
