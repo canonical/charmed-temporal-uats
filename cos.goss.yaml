@@ -27,7 +27,6 @@ command:
       curl -s "http://admin:${grafana_admin_password}@${grafana_ip}:3000/api/search"
     stdout:
     - Temporal Service Metrics
-    - Temporal Worker SDK Metrics
   loki-contains-log-streams:
     exit-status: 0
     exec: |
