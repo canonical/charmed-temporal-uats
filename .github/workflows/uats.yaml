@@ -13,12 +13,16 @@ jobs:
         uat:
           - uats-namespace-isolation
           - uats-ingress
+          - uats-cos
       fail-fast: false
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.uat }}
       cancel-in-progress: true
 
     steps:
+      - name: Maximize GH runner disk
+        uses: jlumbroso/free-disk-space@v1.3.1
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -26,7 +30,6 @@ jobs:
         run: |
           set -e
 
-          # FIXME: install via the goss snap when available
           goss_base_url="https://github.com/goss-org/goss/releases/latest/download"
           curl -L ${goss_base_url}/goss-linux-amd64 -o /usr/local/bin/goss
           chmod +rx /usr/local/bin/goss
@@ -60,3 +63,7 @@ jobs:
 
       - name: Execute UATs
         run: just ${{ matrix.uat }}
+
+      - name: Get system state (if failure)
+        if: failure()
+        run: just get-system-state

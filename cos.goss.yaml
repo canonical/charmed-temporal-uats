@@ -1,0 +1,41 @@
+command:
+  'grafana active':
+    exit-status: 0
+    exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" grafana --query='name == "grafana" && status == "active"'
+  'loki active':
+    exit-status: 0
+    exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" loki --query='name == "loki" && status == "active"'
+  'prometheus active':
+    exit-status: 0
+    exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" prometheus --query='name == "prometheus" && status == "active"'
+  prometheus-contains-metrics-and-alerts:
+    exit-status: 0
+    exec: |
+      model_suffix=$(just get-model-suffix);
+      prometheus_ip=$(juju status --model "cos-uats-${model_suffix}" | grep prometheus/0 | awk '{print $4}');
+      curl --max-time 5 -s "http://${prometheus_ip}:9090/api/v1/label/__name__/values";
+      curl --max-time 5 -s "http://${prometheus_ip}:9090/api/v1/rules?type=alert";
+    stdout:
+    - "temporal_sticky_cache_hit"
+    - "TemporalServerDown"
+    - "TemporalDatabaseDown"
+    timeout: 15000
+  grafana-contains-dashboards:
+    exit-status: 0
+    exec: |
+      model_suffix=$(just get-model-suffix);
+      grafana_ip=$(juju status --model "cos-uats-${model_suffix}" | grep grafana/0 | awk '{print $4}');
+      grafana_admin_password=$(juju run --model "cos-uats-${model_suffix}" --format json grafana/0 get-admin-password | jq -r '."grafana/0".results."admin-password"');
+      curl --max-time 5 -s "http://admin:${grafana_admin_password}@${grafana_ip}:3000/api/search";
+    stdout:
+    - "Temporal Server Metrics"
+    - "Temporal Worker SDK Metrics"
+  loki-contains-log-streams:
+    exit-status: 0
+    exec: |
+      model_suffix=$(just get-model-suffix);
+      loki_ip=$(juju status --model "cos-uats-${model_suffix}" | grep loki/0 | awk '{print $4}');
+      curl --max-time 5 -s "http://${loki_ip}:3100/loki/api/v1/series";
+    stdout:
+    - "temporal-k8s"
+    - "temporal-worker-k8s-python"
