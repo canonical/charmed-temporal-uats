@@ -26,7 +26,8 @@ command:
       grafana_admin_password=$(juju run --model "cos-uats-${model_suffix}" --format json grafana/0 get-admin-password | jq -r '."grafana/0".results."admin-password"')
       curl -s "http://admin:${grafana_admin_password}@${grafana_ip}:3000/api/search"
     stdout:
-    - Temporal Service Metrics
+    - Temporal Server Metrics
+    - Temporal Worker SDK Metrics
   loki-contains-log-streams:
     exit-status: 0
     exec: |
