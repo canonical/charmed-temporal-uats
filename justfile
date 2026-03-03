@@ -186,12 +186,14 @@ integrate-applications model_suffix="fixed":
 [private]
 create-namespaces:
     #!/usr/bin/bash
+    set -euxo pipefail
+
     juju switch "temporal-server-uats-$(just get-model-suffix)"
 
     juju wait-for application temporal-admin-k8s --query='name == "temporal-admin-k8s" && status == "active"'
 
-    juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-go-namespace --retention 3d" --wait 1m
-    juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-python-namespace --retention 3d" --wait 1m
+    juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-go-namespace --retention 3d" --wait 2m
+    juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-python-namespace --retention 3d" --wait 2m
 
 # Pack the python worker image
 pack-worker-python debug="":
