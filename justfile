@@ -125,7 +125,6 @@ deploy-cos model_suffix="fixed" cos_channel="latest/stable":
     juju offer cos-uats-${model_suffix}.prometheus:metrics-endpoint
     # TODO: add tracing
 
-# TODO: change 1.0/edge -> 1.0/stable
 [private]
 deploy-workers worker_python_image worker_go_image model_suffix="fixed" worker_channel="1.0/edge":
     #!/usr/bin/bash
@@ -218,7 +217,7 @@ format:
     tox -e format
 
 # Deploy the Temporal applications for UATs
-deploy-temporal:
+deploy-temporal temporal_track="1.23" temporal_risk="edge":
     #!/usr/bin/bash
     set -euxo pipefail
 
@@ -236,9 +235,9 @@ deploy-temporal:
 
     just create-models ${suffix}
 
-    just deploy-temporal-server ${suffix}
+    just deploy-temporal-server ${suffix} "${temporal_track}/${temporal_risk}"
     just deploy-cos ${suffix}
-    just deploy-workers localhost:5000/worker-python:dev localhost:5000/worker-go:dev ${suffix}
+    just deploy-workers localhost:5000/worker-python:dev localhost:5000/worker-go:dev ${suffix} "1.0/${temporal_risk}"
 
     just integrate-applications ${suffix}
 
