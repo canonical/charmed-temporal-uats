@@ -219,7 +219,7 @@ format:
     tox -e format
 
 # Deploy the Temporal applications for UATs
-deploy-temporal temporal_track="1.23" temporal_risk="edge":
+deploy-temporal temporal_track="1.23" temporal_worker_track="1.0" temporal_risk="edge":
     #!/usr/bin/bash
     set -euxo pipefail
 
@@ -239,7 +239,7 @@ deploy-temporal temporal_track="1.23" temporal_risk="edge":
 
     just deploy-temporal-server ${suffix} "${temporal_track}/${temporal_risk}"
     just deploy-cos ${suffix}
-    just deploy-workers localhost:5000/worker-python:dev localhost:5000/worker-go:dev ${suffix} "1.0/${temporal_risk}"
+    just deploy-workers localhost:5000/worker-python:dev localhost:5000/worker-go:dev ${suffix} "${temporal_worker_track}/${temporal_risk}"
 
     just integrate-applications ${suffix}
 
