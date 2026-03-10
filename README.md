@@ -48,12 +48,12 @@ sudo k8s set load-balancer.l2-mode=true load-balancer.cdrs=10.2.0.0/24
 sudo k8s enable ingress load-balancer
 sudo k8s kubectl config view --raw > ~/.kube/config
 just install-nginx-controller
-just deploy-temporal [track] [risk]
+just deploy-temporal [track] [worker_track] [risk]
 just uats-{namespace-isolation,ingress,cos}
 ```
 
-The `track` and `risk` arguments are optional and default to `1.23` and `edge` respectively. For example, to test against `1.23/beta`:
+The `track`, `worker_track`, and `risk` arguments are optional and default to `1.23`, `1.0`, and `edge` respectively. For example, to test against `1.23/beta`:
 
 ```bash
-just deploy-temporal 1.23 beta
+just deploy-temporal 1.23 1.0 beta
 ```
