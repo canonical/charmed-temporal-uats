@@ -34,7 +34,13 @@ For each UAT, we use `goss` to implement pre-flight checks before UATs are execu
 
 ## Executing UATs
 
-Starting from a fresh environment:
+### On demand via CI (recommended)
+
+UATs can be triggered manually from the GitHub Actions UI against a specific Charmhub channel risk. (e.g. `edge` → `beta` → `candidate` → `stable`).
+
+The workflow will deploy a fresh Temporal stack using the specified channel (e.g. `1.23/candidate`) and run all UAT categories.
+
+### Locally (fresh environment)
 
 ```bash
 sudo -E concierge prepare -p k8s --extra-snaps=astral-uv
@@ -42,6 +48,12 @@ sudo k8s set load-balancer.l2-mode=true load-balancer.cdrs=10.2.0.0/24
 sudo k8s enable ingress load-balancer
 sudo k8s kubectl config view --raw > ~/.kube/config
 just install-nginx-controller
-just deploy-temporal
+just deploy-temporal [track] [worker_track] [risk]
 just uats-{namespace-isolation,ingress,cos}
+```
+
+The `track`, `worker_track`, and `risk` arguments are optional and default to `1.23`, `1.0`, and `edge` respectively. For example, to test against `1.23/beta`:
+
+```bash
+just deploy-temporal 1.23 1.0 beta
 ```

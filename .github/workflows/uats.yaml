@@ -2,6 +2,32 @@ name: UAT tests
 
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      server-track:
+        description: 'Server-side charm channel track'
+        required: false
+        default: '1.23'
+        type: choice
+        options:
+          - '1.23'
+      worker-track:
+        description: 'Worker charm channel track'
+        required: false
+        default: '1.0'
+        type: choice
+        options:
+          - '1.0'
+      risk:
+        description: 'Charm channel risk to test against'
+        required: true
+        default: 'edge'
+        type: choice
+        options:
+          - edge
+          - beta
+          - candidate
+          - stable
 
 jobs:
   uats:
@@ -17,7 +43,7 @@ jobs:
       fail-fast: false
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.uat }}
-      cancel-in-progress: true
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
     steps:
       - name: Maximize GH runner disk
@@ -59,7 +85,7 @@ jobs:
           sudo snap start docker
 
       - name: Deploy Temporal models
-        run: just deploy-temporal
+        run: just deploy-temporal ${{ inputs.server-track || '1.23' }} ${{ inputs.worker-track || '1.0' }} ${{ inputs.risk || 'edge' }}
 
       - name: Execute UATs
         run: just ${{ matrix.uat }}
