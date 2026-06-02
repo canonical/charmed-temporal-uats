@@ -65,18 +65,10 @@ jobs:
           sudo rm -r /run/containerd
 
           sudo snap install concierge --classic
-
-          sudo snap install just --classic
-
-          sudo -E concierge prepare -p k8s --extra-snaps=astral-uv
-
-          sudo k8s set load-balancer.l2-mode=true load-balancer.cidrs=10.2.0.0/24
-          sudo k8s enable ingress load-balancer
-
+          sudo -E concierge prepare -c .github/workflows/custom-concierge.yaml
+          sudo k8s enable ingress
           sudo k8s kubectl config view --raw > ~/.kube/config
-
           uv tool install tox
-
           just install-nginx-controller
 
       - name: Install docker (after k8s bootstrapped)

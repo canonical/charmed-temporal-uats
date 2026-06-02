@@ -156,6 +156,8 @@ integrate-applications model_suffix="fixed":
     juju integrate temporal-k8s:admin temporal-admin-k8s:admin
 
     juju integrate temporal-k8s:ui temporal-ui-k8s:ui
+    juju integrate temporal-k8s:temporal-host-info temporal-admin-k8s:temporal-host-info
+    juju integrate temporal-k8s:temporal-host-info temporal-ui-k8s:temporal-host-info
 
     juju integrate temporal-ui-ingress:certificates self-signed-certificates:certificates
 
@@ -189,9 +191,8 @@ create-namespaces:
     set -euxo pipefail
 
     juju switch "temporal-server-uats-$(just get-model-suffix)"
-
+    juju wait-for application temporal-k8s --query='name == "temporal-k8s" && status == "active"'
     juju wait-for application temporal-admin-k8s --query='name == "temporal-admin-k8s" && status == "active"'
-
     juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-go-namespace --retention 3d" --wait 2m
     juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-python-namespace --retention 3d" --wait 2m
 
