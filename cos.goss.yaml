@@ -2,6 +2,7 @@ command:
   'grafana active':
     exit-status: 0
     exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" grafana --query='name == "grafana" && status == "active"'
+    timeout: 30000
   'loki active':
     exit-status: 0
     exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" loki --query='name == "loki" && status == "active"'
@@ -30,6 +31,7 @@ command:
     stdout:
     - "Temporal Server Metrics"
     - "Temporal Worker SDK Metrics"
+    timeout: 30000
   loki-contains-log-streams:
     exit-status: 0
     exec: |
