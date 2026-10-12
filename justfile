@@ -6,7 +6,6 @@ default:
 
 [private]
 clean:
-    rm -rf ./temporal-k8s-operator/
     rm ./worker_python/*.rock
     rm ./worker_go/*.rock
 
@@ -24,11 +23,6 @@ push-to-local-registry rock_filepath registry tag: (start-local-registry)
     rockcraft.skopeo --insecure-policy copy --dest-tls-verify=false \
         "oci-archive:${rock_filepath}" \
         "docker://localhost:5000/${registry}:${tag}"
-
-[private]
-clone-temporal-k8s-repo branch="track/1.31":
-    rm -rf ./temporal-k8s-operator
-    git clone --branch ${branch} --single-branch https://github.com/canonical/temporal-k8s-operator.git temporal-k8s-operator
 
 [private]
 install-nginx-controller:
