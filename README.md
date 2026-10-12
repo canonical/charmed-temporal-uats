@@ -52,8 +52,8 @@ just deploy-temporal [track] [worker_track] [risk]
 just uats-{namespace-isolation,ingress,cos}
 ```
 
-The `track`, `worker_track`, and `risk` arguments are optional and default to `1.31`, `1.0`, and `edge` respectively. For example, to test against `1.31/beta`:
+The `track`, `worker_track`, and `risk` arguments are optional and default to `1.31`, `2.0`, and `edge` respectively. For example, to test against `1.31/beta`:
 
 ```bash
-just deploy-temporal 1.31 1.0 beta
+just deploy-temporal 1.31 2.0 beta
 ```

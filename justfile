@@ -120,7 +120,7 @@ deploy-cos model_suffix="fixed" cos_channel="latest/stable":
     # TODO: add tracing
 
 [private]
-deploy-workers worker_python_image worker_go_image model_suffix="fixed" worker_channel="1.0/edge":
+deploy-workers worker_python_image worker_go_image model_suffix="fixed" worker_channel="2.0/edge":
     #!/usr/bin/bash
     juju switch temporal-workers-uats-${model_suffix}
 
@@ -214,7 +214,7 @@ format:
     tox -e format
 
 # Deploy the Temporal applications for UATs
-deploy-temporal temporal_track="1.31" temporal_worker_track="1.0" temporal_risk="edge":
+deploy-temporal temporal_track="1.31" temporal_worker_track="2.0" temporal_risk="edge":
     #!/usr/bin/bash
     set -euxo pipefail
 
