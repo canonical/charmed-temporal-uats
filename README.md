@@ -38,7 +38,7 @@ For each UAT, we use `goss` to implement pre-flight checks before UATs are execu
 
 UATs can be triggered manually from the GitHub Actions UI against a specific Charmhub channel risk. (e.g. `edge` → `beta` → `candidate` → `stable`).
 
-The workflow will deploy a fresh Temporal stack using the specified channel (e.g. `1.23/candidate`) and run all UAT categories.
+The workflow will deploy a fresh Temporal stack using the specified channel (e.g. `1.31/candidate`) and run all UAT categories.
 
 ### Locally (fresh environment)
 
@@ -52,8 +52,8 @@ just deploy-temporal [track] [worker_track] [risk]
 just uats-{namespace-isolation,ingress,cos}
 ```
 
-The `track`, `worker_track`, and `risk` arguments are optional and default to `1.23`, `1.0`, and `edge` respectively. For example, to test against `1.23/beta`:
+The `track`, `worker_track`, and `risk` arguments are optional and default to `1.31`, `1.0`, and `edge` respectively. For example, to test against `1.31/beta`:
 
 ```bash
-just deploy-temporal 1.23 1.0 beta
+just deploy-temporal 1.31 1.0 beta
 ```

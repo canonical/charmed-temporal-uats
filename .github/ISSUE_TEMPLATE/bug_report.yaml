@@ -35,7 +35,7 @@ body:
       description: >
         We need to know a bit more about the context in which you run the UATs.
         - Are you running Juju locally, on lxd, in multipass or on some other platform?
-        - What Github branch you deployed the UATs from (ie. `track/1.23` or similar).
+        - What Github branch you deployed the UATs from (ie. `track/1.31` or similar).
         - Version of any applicable components, like the juju snap, the model controller, lxd, microk8s, and/or multipass.
     validations:
       required: true

@@ -7,10 +7,10 @@ on:
       server-track:
         description: 'Server-side charm channel track'
         required: false
-        default: '1.23'
+        default: '1.31'
         type: choice
         options:
-          - '1.23'
+          - '1.31'
       worker-track:
         description: 'Worker charm channel track'
         required: false
@@ -77,7 +77,7 @@ jobs:
           sudo snap start docker
 
       - name: Deploy Temporal models
-        run: just deploy-temporal ${{ inputs.server-track || '1.23' }} ${{ inputs.worker-track || '1.0' }} ${{ inputs.risk || 'edge' }}
+        run: just deploy-temporal ${{ inputs.server-track || '1.31' }} ${{ inputs.worker-track || '1.0' }} ${{ inputs.risk || 'edge' }}
 
       - name: Execute UATs
         run: just ${{ matrix.uat }}

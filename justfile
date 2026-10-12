@@ -26,7 +26,7 @@ push-to-local-registry rock_filepath registry tag: (start-local-registry)
         "docker://localhost:5000/${registry}:${tag}"
 
 [private]
-clone-temporal-k8s-repo branch="track/1.23":
+clone-temporal-k8s-repo branch="track/1.31":
     rm -rf ./temporal-k8s-operator
     git clone --branch ${branch} --single-branch https://github.com/canonical/temporal-k8s-operator.git temporal-k8s-operator
 
@@ -95,7 +95,7 @@ destroy-cos-model:
 destroy-all-models: destroy-server-model destroy-workers-model destroy-cos-model
 
 [private]
-deploy-temporal-server model_suffix="fixed" temporal_channel="1.23/edge" postgresql_channel="14/stable" nginx_ingress_integrator_channel="latest/stable" self_signed_certificates_channel="1/stable":
+deploy-temporal-server model_suffix="fixed" temporal_channel="1.31/edge" postgresql_channel="14/stable" nginx_ingress_integrator_channel="latest/stable" self_signed_certificates_channel="1/stable":
     #!/usr/bin/bash
     juju switch temporal-server-uats-${model_suffix}
 
@@ -220,7 +220,7 @@ format:
     tox -e format
 
 # Deploy the Temporal applications for UATs
-deploy-temporal temporal_track="1.23" temporal_worker_track="1.0" temporal_risk="edge":
+deploy-temporal temporal_track="1.31" temporal_worker_track="1.0" temporal_risk="edge":
     #!/usr/bin/bash
     set -euxo pipefail
 
