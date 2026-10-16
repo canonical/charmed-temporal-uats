@@ -42,7 +42,7 @@ UATs can be triggered manually from the GitHub Actions UI against a specific Cha
 
 The workflow will deploy a fresh Temporal stack using the specified channel (e.g. `1.31/candidate`) and run all UAT categories.
 
-A scheduled variant of the same workflow (`nightly-juju4.yaml`) runs the UATs every night against Juju `4/edge`, deploying `postgresql-k8s` from `16/stable` with `--force` since `14/stable` does not support Juju 4.
+A scheduled variant of the same workflow (`nightly-juju4.yaml`) runs the UATs every night against Juju `4.1/edge`, deploying `postgresql-k8s` from `16/stable` with `--force` since `14/stable` does not support Juju 4.
 
 ### Locally (fresh environment)
 

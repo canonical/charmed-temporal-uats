@@ -9,7 +9,7 @@
 # compatibility issues early and report them to the Juju team.
 #
 # Key differences vs a pull_request run of uats.yaml:
-#   - Juju channel: 4/edge (instead of 3.6/stable), provisioned from
+#   - Juju channel: 4.1/edge (instead of 3.6/stable), provisioned from
 #     custom-concierge.yaml by overriding the channel via concierge's
 #     --juju-channel flag
 #   - postgresql-k8s channel: 16/stable (14/stable does not support juju 4)
@@ -39,7 +39,7 @@ jobs:
     permissions:
       contents: read
     with:
-      juju-channel: "4/edge"
+      juju-channel: "4.1/edge"
       postgres-channel: "16/stable"
       postgres-force: true
 

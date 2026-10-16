@@ -57,7 +57,7 @@ env:
 jobs:
   uats:
     name: Run UATs
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       matrix:
