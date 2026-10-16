@@ -28,11 +28,36 @@ on:
           - beta
           - candidate
           - stable
+  workflow_call:
+    inputs:
+      juju-channel:
+        description: Juju snap channel the test controllers are bootstrapped from.
+        required: false
+        type: string
+        default: "3.6/stable"
+      postgres-channel:
+        description: postgresql-k8s channel deployed by the UAT environment.
+        required: false
+        type: string
+        default: "14/stable"
+      postgres-force:
+        description: Deploy postgresql-k8s with --force to skip the base support check.
+        required: false
+        type: boolean
+        default: false
+
+# Effective configuration for the run. The inputs context is only populated
+# for workflow_call / workflow_dispatch runs; on pull_request it is empty, so
+# each input is resolved here with a fallback matching its declared default.
+env:
+  JUJU_CHANNEL: ${{ inputs.juju-channel || '3.6/stable' }}
+  POSTGRESQL_CHANNEL: ${{ inputs.postgres-channel || '14/stable' }}
+  POSTGRESQL_FORCE: ${{ inputs.postgres-force || false }}
 
 jobs:
   uats:
     name: Run UATs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     strategy:
       matrix:
@@ -70,7 +95,7 @@ jobs:
           sudo rm -r /run/containerd
 
           sudo snap install concierge --classic
-          sudo -E concierge prepare -c .github/workflows/custom-concierge.yaml
+          sudo -E concierge prepare -c .github/workflows/custom-concierge.yaml --juju-channel "$JUJU_CHANNEL"
           sudo k8s enable ingress
           sudo k8s kubectl config view --raw > ~/.kube/config
           uv tool install tox
@@ -82,7 +107,13 @@ jobs:
           sudo snap start docker
 
       - name: Deploy Temporal models
-        run: just deploy-temporal ${{ inputs.server-track || '1.31' }} ${{ inputs.worker-track || '2.0' }} ${{ inputs.risk || 'edge' }}
+        run: >-
+          just deploy-temporal
+          ${{ inputs.server-track || '1.31' }}
+          ${{ inputs.worker-track || '2.0' }}
+          ${{ inputs.risk || 'edge' }}
+          "${{ env.POSTGRESQL_CHANNEL }}"
+          "${{ env.POSTGRESQL_FORCE }}"
 
       - name: Execute UATs
         run: just ${{ matrix.uat }}

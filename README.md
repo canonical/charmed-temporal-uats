@@ -32,6 +32,8 @@ We have `just` targets to deploy Charmed Temporal in 3 models (Temporal Server, 
 
 For each UAT, we use `goss` to implement pre-flight checks before UATs are executed. We use uv + tox to create virtual environments for the UATs. Each UAT is implemented as a pytest, and utilizes packages like `jubilant` and `lightkube` to interact with the underlying juju and k8s.
 
+`juju wait-for` was removed in Juju 4, so application readiness checks (in the `justfile` and `*.goss.yaml`) use `scripts/wait-for-juju-app`, a status-polling helper that works on all Juju versions.
+
 ## Executing UATs
 
 ### On demand via CI (recommended)
@@ -39,6 +41,8 @@ For each UAT, we use `goss` to implement pre-flight checks before UATs are execu
 UATs can be triggered manually from the GitHub Actions UI against a specific Charmhub channel risk. (e.g. `edge` → `beta` → `candidate` → `stable`).
 
 The workflow will deploy a fresh Temporal stack using the specified channel (e.g. `1.31/candidate`) and run all UAT categories.
+
+A scheduled variant of the same workflow (`nightly-juju4.yaml`) runs the UATs every night against Juju `4/edge`, deploying `postgresql-k8s` from `16/stable` with `--force` since `14/stable` does not support Juju 4.
 
 ### Locally (fresh environment)
 

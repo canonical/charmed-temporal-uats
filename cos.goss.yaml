@@ -1,14 +1,14 @@
 command:
   'grafana active':
     exit-status: 0
-    exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" grafana --query='name == "grafana" && status == "active"'
+    exec: ./scripts/wait-for-juju-app "cos-uats-$(just get-model-suffix)" grafana
     timeout: 30000
   'loki active':
     exit-status: 0
-    exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" loki --query='name == "loki" && status == "active"'
+    exec: ./scripts/wait-for-juju-app "cos-uats-$(just get-model-suffix)" loki
   'prometheus active':
     exit-status: 0
-    exec: juju wait-for application --model "cos-uats-$(just get-model-suffix)" prometheus --query='name == "prometheus" && status == "active"'
+    exec: ./scripts/wait-for-juju-app "cos-uats-$(just get-model-suffix)" prometheus
   prometheus-contains-metrics-and-alerts:
     exit-status: 0
     exec: |
