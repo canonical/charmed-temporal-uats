@@ -89,11 +89,15 @@ destroy-cos-model:
 destroy-all-models: destroy-server-model destroy-workers-model destroy-cos-model
 
 [private]
-deploy-temporal-server model_suffix="fixed" temporal_channel="1.31/edge" postgresql_channel="14/stable" nginx_ingress_integrator_channel="latest/stable" self_signed_certificates_channel="1/stable":
+deploy-temporal-server model_suffix="fixed" temporal_channel="1.31/edge" postgresql_channel="14/stable" postgresql_force="false" nginx_ingress_integrator_channel="latest/stable" self_signed_certificates_channel="1/stable":
     #!/usr/bin/bash
     juju switch temporal-server-uats-${model_suffix}
 
-    juju deploy postgresql-k8s --channel "${postgresql_channel}" --trust
+    force_flag=""
+    if [ "${postgresql_force}" = "true" ]; then
+        force_flag="--force"
+    fi
+    juju deploy postgresql-k8s --channel "${postgresql_channel}" --trust ${force_flag}
 
     juju deploy temporal-k8s --channel "${temporal_channel}" \
         --config num-history-shards=1 \
@@ -185,8 +189,8 @@ create-namespaces:
     set -euxo pipefail
 
     juju switch "temporal-server-uats-$(just get-model-suffix)"
-    juju wait-for application temporal-k8s --query='name == "temporal-k8s" && status == "active"'
-    juju wait-for application temporal-admin-k8s --query='name == "temporal-admin-k8s" && status == "active"'
+    ./scripts/wait-for-juju-app "temporal-server-uats-$(just get-model-suffix)" temporal-k8s
+    ./scripts/wait-for-juju-app "temporal-server-uats-$(just get-model-suffix)" temporal-admin-k8s
     juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-go-namespace --retention 3d" --wait 2m
     juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-python-namespace --retention 3d" --wait 2m
 
@@ -214,7 +218,7 @@ format:
     tox -e format
 
 # Deploy the Temporal applications for UATs
-deploy-temporal temporal_track="1.31" temporal_worker_track="2.0" temporal_risk="edge":
+deploy-temporal temporal_track="1.31" temporal_worker_track="2.0" temporal_risk="edge" postgresql_channel="14/stable" postgresql_force="false":
     #!/usr/bin/bash
     set -euxo pipefail
 
@@ -232,7 +236,7 @@ deploy-temporal temporal_track="1.31" temporal_worker_track="2.0" temporal_risk=
 
     just create-models ${suffix}
 
-    just deploy-temporal-server ${suffix} "${temporal_track}/${temporal_risk}"
+    just deploy-temporal-server ${suffix} "${temporal_track}/${temporal_risk}" "${postgresql_channel}" "${postgresql_force}"
     just deploy-cos ${suffix}
     just deploy-workers localhost:5000/worker-python:dev localhost:5000/worker-go:dev ${suffix} "${temporal_worker_track}/${temporal_risk}"
 

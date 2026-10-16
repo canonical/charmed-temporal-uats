@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -lt 2 || $# -gt 3 ]]; then
+    echo "Usage: $0 MODEL APPLICATION [TIMEOUT_SECONDS]" >&2
+    exit 2
+fi
+
+model="$1"
+app="$2"
+timeout="${3:-600}"
+deadline=$((SECONDS + timeout))
+
+while (( SECONDS < deadline )); do
+    if status=$(juju status --model "$model" --format=json 2>/dev/null); then
+        if jq -e --arg app "$app" '
+            .applications[$app] |
+            ((."application-status".current // .status.current // "") == "active")
+        ' <<< "$status" >/dev/null 2>&1; then
+            echo "Application $app in model $model is active"
+            exit 0
+        fi
+    fi
+
+    echo "Waiting for $app in model $model..."
+    sleep 5
+done
+
+echo "Timed out waiting for $app in model $model after ${timeout}s" >&2
+juju status --model "$model"
+exit 1
