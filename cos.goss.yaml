@@ -2,13 +2,15 @@ command:
   'grafana active':
     exit-status: 0
     exec: jubilant wait 'jubilant.all_active(status, "grafana")' --model "cos-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "grafana")' --timeout 600
-    timeout: 30000
+    timeout: 60000
   'loki active':
     exit-status: 0
     exec: jubilant wait 'jubilant.all_active(status, "loki")' --model "cos-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "loki")' --timeout 600
+    timeout: 60000
   'prometheus active':
     exit-status: 0
     exec: jubilant wait 'jubilant.all_active(status, "prometheus")' --model "cos-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "prometheus")' --timeout 600
+    timeout: 60000
   prometheus-contains-metrics-and-alerts:
     exit-status: 0
     exec: |
@@ -41,3 +43,4 @@ command:
     stdout:
     - "temporal-k8s"
     - "temporal-worker-k8s-python"
+    timeout: 30000

@@ -2,24 +2,32 @@ command:
   'postgres active':
     exit-status: 0
     exec: jubilant wait 'jubilant.all_active(status, "postgresql-k8s")' --model "temporal-server-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "postgresql-k8s")' --timeout 600
+    timeout: 60000
   'temporal server active':
     exit-status: 0
     exec: jubilant wait 'jubilant.all_active(status, "temporal-k8s")' --model "temporal-server-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "temporal-k8s")' --timeout 600
+    timeout: 60000
   'temporal ui active':
     exit-status: 0
     exec: jubilant wait 'jubilant.all_active(status, "temporal-ui-k8s")' --model "temporal-server-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "temporal-ui-k8s")' --timeout 600
+    timeout: 60000
   'temporal admin active':
     exit-status: 0
     exec: jubilant wait 'jubilant.all_active(status, "temporal-admin-k8s")' --model "temporal-server-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "temporal-admin-k8s")' --timeout 600
+    timeout: 60000
   'temporal python worker active':
     exit-status: 0
     exec: jubilant wait 'jubilant.all_active(status, "temporal-worker-k8s-python")' --model "temporal-workers-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "temporal-worker-k8s-python")' --timeout 600
+    timeout: 60000
   'temporal go worker active':
     exit-status: 0
     exec: jubilant wait 'jubilant.all_active(status, "temporal-worker-k8s-go")' --model "temporal-workers-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "temporal-worker-k8s-go")' --timeout 600
+    timeout: 60000
   'temporal ui nginx ingress active':
     exit-status: 0
     exec: jubilant wait 'jubilant.all_active(status, "temporal-ui-ingress")' --model "temporal-server-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "temporal-ui-ingress")' --timeout 600
+    timeout: 60000
   'self signed certificates active':
     exit-status: 0
     exec: jubilant wait 'jubilant.all_active(status, "self-signed-certificates")' --model "temporal-server-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "self-signed-certificates")' --timeout 600
+    timeout: 60000
