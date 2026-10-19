@@ -50,7 +50,8 @@ jobs:
         sudo tar -xzf /tmp/goss.tar.gz -C /usr/local/bin goss
         sudo chmod +x /usr/local/bin/goss
         sudo k8s enable ingress
-        uv tool install tox "jubilant>=1.13.0"
+        uv tool install tox
+        uv tool install "jubilant>=1.13.0"
         just install-nginx-controller
       test-commands: >-
         ["just deploy-temporal 1.31 2.0 edge 16/stable true && just uats-namespace-isolation",

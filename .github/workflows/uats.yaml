@@ -78,7 +78,8 @@ jobs:
           sudo -E concierge prepare -c .github/workflows/custom-concierge.yaml --juju-channel "$JUJU_CHANNEL"
           sudo k8s enable ingress
           sudo k8s kubectl config view --raw > ~/.kube/config
-          uv tool install tox "jubilant>=1.13.0"
+          uv tool install tox
+          uv tool install "jubilant>=1.13.0"
           just install-nginx-controller
 
       - name: Install docker (after k8s bootstrapped)

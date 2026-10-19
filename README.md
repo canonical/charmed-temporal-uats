@@ -52,7 +52,8 @@ sudo -E concierge prepare -p k8s --extra-snaps=astral-uv
 sudo k8s set load-balancer.l2-mode=true load-balancer.cdrs=10.2.0.0/24
 sudo k8s enable ingress load-balancer
 sudo k8s kubectl config view --raw > ~/.kube/config
-uv tool install tox "jubilant>=1.13.0"
+uv tool install tox
+uv tool install "jubilant>=1.13.0"
 just install-nginx-controller
 just deploy-temporal [track] [worker_track] [risk]
 just uats-{namespace-isolation,ingress,cos}
