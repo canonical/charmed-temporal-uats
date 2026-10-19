@@ -28,31 +28,11 @@ on:
           - beta
           - candidate
           - stable
-  workflow_call:
-    inputs:
-      juju-channel:
-        description: Juju snap channel the test controllers are bootstrapped from.
-        required: false
-        type: string
-        default: "3.6/stable"
-      postgres-channel:
-        description: postgresql-k8s channel deployed by the UAT environment.
-        required: false
-        type: string
-        default: "14/stable"
-      postgres-force:
-        description: Deploy postgresql-k8s with --force to skip the base support check.
-        required: false
-        type: boolean
-        default: false
 
-# Effective configuration for the run. The inputs context is only populated
-# for workflow_call / workflow_dispatch runs; on pull_request it is empty, so
-# each input is resolved here with a fallback matching its declared default.
 env:
-  JUJU_CHANNEL: ${{ inputs.juju-channel || '3.6/stable' }}
-  POSTGRESQL_CHANNEL: ${{ inputs.postgres-channel || '14/stable' }}
-  POSTGRESQL_FORCE: ${{ inputs.postgres-force || false }}
+  JUJU_CHANNEL: "3.6/stable"
+  POSTGRESQL_CHANNEL: "14/stable"
+  POSTGRESQL_FORCE: false
 
 jobs:
   uats:
@@ -98,7 +78,7 @@ jobs:
           sudo -E concierge prepare -c .github/workflows/custom-concierge.yaml --juju-channel "$JUJU_CHANNEL"
           sudo k8s enable ingress
           sudo k8s kubectl config view --raw > ~/.kube/config
-          uv tool install tox
+          uv tool install tox "jubilant>=1.13.0"
           just install-nginx-controller
 
       - name: Install docker (after k8s bootstrapped)

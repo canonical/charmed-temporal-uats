@@ -1,22 +1,16 @@
 # Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-# Nightly UAT runs against Juju 4.x.
-#
-# This is a parallel CI pipeline that reuses the job in uats.yaml via
-# workflow_call (so the UAT matrix and steps stay in one place) but provisions
-# a Juju 4 controller. It runs nightly so the team can spot Juju 4
-# compatibility issues early and report them to the Juju team.
+# Nightly UAT runs against Juju 4.x via the team's shared reusable workflow.
+# Each test command gets its own runner provisioned by concierge and deploys a
+# fresh Temporal stack before running its UAT category. Scheduled failures
+# open/update one issue labelled `juju-4`.
 #
 # Key differences vs a pull_request run of uats.yaml:
-#   - Juju channel: 4.1/edge (instead of 3.6/stable), provisioned from
-#     custom-concierge.yaml by overriding the channel via concierge's
-#     --juju-channel flag
-#   - postgresql-k8s channel: 16/stable (14/stable does not support juju 4)
+#   - Juju channel: 4.1/edge, provisioned from custom-concierge.yaml
+#   - postgresql-k8s channel: 16/stable (14/stable does not support Juju 4)
 #   - postgresql-k8s deployed with --force to bypass base checks until the
 #     charm formally declares Juju 4 support
-#
-# The regular CI (pull_request trigger of uats.yaml / Juju 3.x) is unaffected.
 
 name: Juju 4.x UATs
 
@@ -25,62 +19,41 @@ on:
     # Run at 02:30 UTC every day
     - cron: '30 2 * * *'
   workflow_dispatch:
-    inputs:
-      create-issues:
-        description: Create/update GitHub issues for failures (always on for scheduled runs)
-        required: false
-        type: boolean
-        default: false
+
+permissions:
+  contents: read
+  issues: write
 
 jobs:
   uats:
     name: UATs [juju 4.x]
-    uses: ./.github/workflows/uats.yaml
-    permissions:
-      contents: read
+    uses: canonical/workflows-team/.github/workflows/juju-nightly.yaml@main
     with:
       juju-channel: "4.1/edge"
-      postgres-channel: "16/stable"
-      postgres-force: true
-
-  # Report the scheduled nightly run as a single GitHub issue so the team has
-  # a visible, assignable record to triage: the issue is created on the first
-  # failure and commented on repeat failures.
-  report:
-    name: Report results
-    runs-on: ubuntu-26.04
-    needs: [uats]
-    if: >-
-      always() && needs.uats.result != 'cancelled' &&
-      (github.event_name == 'schedule' || inputs.create-issues)
-    permissions:
-      issues: write
-    steps:
-      - name: Create or update the failure issue
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          TEST_RESULT: ${{ needs.uats.result }}
-        run: |
-          set -euo pipefail
-
-          if [ "$TEST_RESULT" != "failure" ]; then
-            echo "Tests did not fail; nothing to report."
-            exit 0
-          fi
-
-          existing=$(gh issue list -R "$GITHUB_REPOSITORY" \
-            --label juju-4 --state open --limit 1 \
-            --json number --jq '.[0].number // empty')
-
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" -R "$GITHUB_REPOSITORY" \
-              --body "Juju 4 UAT run failed: $RUN_URL"
-          else
-            gh issue create -R "$GITHUB_REPOSITORY" \
-              --label juju-4 --label bug \
-              --title "Juju 4 UATs failing" \
-              --body "The Juju 4 UATs failed. Please investigate.
-
-          Workflow run: $RUN_URL"
-          fi
+      # Tooling snaps (just, astral-uv, rockcraft, jq, yq, ...) are declared
+      # under host.snaps in custom-concierge.yaml.
+      concierge-config: .github/workflows/custom-concierge.yaml
+      provider: k8s
+      runner: self-hosted-linux-amd64-resolute-large
+      timeout-minutes: 120
+      extra-snaps: ""
+      free-disk-space: true
+      purge-docker: true
+      install-docker: true
+      # Mirrors the "Set up operator environment" step in uats.yaml. Runs on
+      # each runner after concierge provisions Juju and the k8s cloud.
+      setup-command: |
+        GOSS_VERSION="v0.4.10"
+        curl -fSL \
+          "https://github.com/goss-org/goss/releases/download/${GOSS_VERSION}/goss_${GOSS_VERSION#v}_linux_x86_64.tar.gz" \
+          -o /tmp/goss.tar.gz
+        sudo tar -xzf /tmp/goss.tar.gz -C /usr/local/bin goss
+        sudo chmod +x /usr/local/bin/goss
+        sudo k8s enable ingress
+        uv tool install tox "jubilant>=1.13.0"
+        just install-nginx-controller
+      test-commands: >-
+        ["just deploy-temporal 1.31 2.0 edge 16/stable true && just uats-namespace-isolation",
+        "just deploy-temporal 1.31 2.0 edge 16/stable true && just uats-ingress",
+        "just deploy-temporal 1.31 2.0 edge 16/stable true && just uats-cos"]
+      issue-label: juju-4

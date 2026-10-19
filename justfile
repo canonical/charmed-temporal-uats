@@ -188,9 +188,13 @@ create-namespaces:
     #!/usr/bin/bash
     set -euxo pipefail
 
-    juju switch "temporal-server-uats-$(just get-model-suffix)"
-    ./scripts/wait-for-juju-app "temporal-server-uats-$(just get-model-suffix)" temporal-k8s
-    ./scripts/wait-for-juju-app "temporal-server-uats-$(just get-model-suffix)" temporal-admin-k8s
+    model_suffix="$(just get-model-suffix)"
+    juju switch "temporal-server-uats-${model_suffix}"
+    jubilant wait \
+        'jubilant.all_active(status, "temporal-k8s", "temporal-admin-k8s")' \
+        --model "temporal-server-uats-${model_suffix}" \
+        --error 'jubilant.any_error(status, "temporal-k8s", "temporal-admin-k8s")' \
+        --timeout 600
     juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-go-namespace --retention 3d" --wait 2m
     juju run temporal-admin-k8s/0 cli args="operator namespace create --namespace worker-python-namespace --retention 3d" --wait 2m
 

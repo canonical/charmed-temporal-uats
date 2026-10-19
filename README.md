@@ -25,6 +25,7 @@ Juju >= 3.6
 6. jq
 7. goss
 8. uv
+9. jubilant >= 1.13 (installed as a uv tool: `uv tool install jubilant`)
 
 ## Testing Architecture
 
@@ -32,7 +33,7 @@ We have `just` targets to deploy Charmed Temporal in 3 models (Temporal Server, 
 
 For each UAT, we use `goss` to implement pre-flight checks before UATs are executed. We use uv + tox to create virtual environments for the UATs. Each UAT is implemented as a pytest, and utilizes packages like `jubilant` and `lightkube` to interact with the underlying juju and k8s.
 
-`juju wait-for` was removed in Juju 4, so application readiness checks (in the `justfile` and `*.goss.yaml`) use `scripts/wait-for-juju-app`, a status-polling helper that works on all Juju versions.
+`juju wait-for` was removed in Juju 4, so application readiness checks (in the `justfile` and `*.goss.yaml`) use `jubilant wait`, a status-polling CLI that works on all Juju versions.
 
 ## Executing UATs
 
@@ -42,7 +43,7 @@ UATs can be triggered manually from the GitHub Actions UI against a specific Cha
 
 The workflow will deploy a fresh Temporal stack using the specified channel (e.g. `1.31/candidate`) and run all UAT categories.
 
-A scheduled variant of the same workflow (`nightly-juju4.yaml`) runs the UATs every night against Juju `4.1/edge`, deploying `postgresql-k8s` from `16/stable` with `--force` since `14/stable` does not support Juju 4.
+A nightly workflow (`nightly-juju4.yaml`) runs the same UATs every night against Juju `4.1/edge` via the team's shared `juju-nightly` workflow, deploying `postgresql-k8s` from `16/stable` with `--force` since `14/stable` does not support Juju 4.
 
 ### Locally (fresh environment)
 
@@ -51,6 +52,7 @@ sudo -E concierge prepare -p k8s --extra-snaps=astral-uv
 sudo k8s set load-balancer.l2-mode=true load-balancer.cdrs=10.2.0.0/24
 sudo k8s enable ingress load-balancer
 sudo k8s kubectl config view --raw > ~/.kube/config
+uv tool install tox "jubilant>=1.13.0"
 just install-nginx-controller
 just deploy-temporal [track] [worker_track] [risk]
 just uats-{namespace-isolation,ingress,cos}
