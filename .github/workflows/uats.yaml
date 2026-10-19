@@ -37,7 +37,10 @@ env:
 jobs:
   uats:
     name: Run UATs
-    runs-on: ubuntu-latest
+    # Self-hosted runner for a stable egress IP: anonymous pulls of the rock
+    # base image from public.ecr.aws are data-quota'd per IP, and GitHub-hosted
+    # runners share IPs that are frequently already exhausted.
+    runs-on: self-hosted-linux-amd64-resolute-large
     timeout-minutes: 60
     strategy:
       matrix:
@@ -70,9 +73,10 @@ jobs:
           sudo chmod +x /usr/local/bin/goss
           /usr/local/bin/goss --version
 
-          sudo apt-get purge $(dpkg -l | grep -i docker | awk '{print $2}')
-          sudo apt-get purge containerd.io
-          sudo rm -r /run/containerd
+          sudo apt-get update
+          sudo apt-get purge -y $(dpkg -l | grep -i docker | awk '{print $2}') || true
+          sudo apt-get purge -y containerd.io || true
+          sudo rm -rf /run/containerd || true
 
           sudo snap install concierge --classic
           sudo -E concierge prepare -c .github/workflows/custom-concierge.yaml --juju-channel "$JUJU_CHANNEL"
