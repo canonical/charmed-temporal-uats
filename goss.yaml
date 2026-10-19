@@ -1,25 +1,33 @@
 command:
   'postgres active':
     exit-status: 0
-    exec: juju wait-for application --model "temporal-server-uats-$(just get-model-suffix)" postgresql-k8s --query='name == "postgresql-k8s" && status == "active"'
+    exec: jubilant wait 'jubilant.all_active(status, "postgresql-k8s")' --model "temporal-server-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "postgresql-k8s")' --timeout 600
+    timeout: 60000
   'temporal server active':
     exit-status: 0
-    exec: juju wait-for application --model "temporal-server-uats-$(just get-model-suffix)" temporal-k8s --query='name == "temporal-k8s" && status == "active"'
+    exec: jubilant wait 'jubilant.all_active(status, "temporal-k8s")' --model "temporal-server-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "temporal-k8s")' --timeout 600
+    timeout: 60000
   'temporal ui active':
     exit-status: 0
-    exec: juju wait-for application --model "temporal-server-uats-$(just get-model-suffix)" temporal-ui-k8s --query='name == "temporal-ui-k8s" && status == "active"'
+    exec: jubilant wait 'jubilant.all_active(status, "temporal-ui-k8s")' --model "temporal-server-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "temporal-ui-k8s")' --timeout 600
+    timeout: 60000
   'temporal admin active':
     exit-status: 0
-    exec: juju wait-for application --model "temporal-server-uats-$(just get-model-suffix)" temporal-admin-k8s --query='name == "temporal-admin-k8s" && status == "active"'
+    exec: jubilant wait 'jubilant.all_active(status, "temporal-admin-k8s")' --model "temporal-server-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "temporal-admin-k8s")' --timeout 600
+    timeout: 60000
   'temporal python worker active':
     exit-status: 0
-    exec: juju wait-for application --model "temporal-workers-uats-$(just get-model-suffix)" temporal-worker-k8s-python --query='name == "temporal-worker-k8s-python" && status == "active"'
+    exec: jubilant wait 'jubilant.all_active(status, "temporal-worker-k8s-python")' --model "temporal-workers-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "temporal-worker-k8s-python")' --timeout 600
+    timeout: 60000
   'temporal go worker active':
     exit-status: 0
-    exec: juju wait-for application --model "temporal-workers-uats-$(just get-model-suffix)" temporal-worker-k8s-go --query='name == "temporal-worker-k8s-go" && status == "active"'
+    exec: jubilant wait 'jubilant.all_active(status, "temporal-worker-k8s-go")' --model "temporal-workers-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "temporal-worker-k8s-go")' --timeout 600
+    timeout: 60000
   'temporal ui nginx ingress active':
     exit-status: 0
-    exec: juju wait-for application --model "temporal-server-uats-$(just get-model-suffix)" temporal-ui-ingress --query='name == "temporal-ui-ingress" && status == "active"'
+    exec: jubilant wait 'jubilant.all_active(status, "temporal-ui-ingress")' --model "temporal-server-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "temporal-ui-ingress")' --timeout 600
+    timeout: 60000
   'self signed certificates active':
     exit-status: 0
-    exec: juju wait-for application --model "temporal-server-uats-$(just get-model-suffix)" self-signed-certificates --query='name == "self-signed-certificates" && status == "active"'
+    exec: jubilant wait 'jubilant.all_active(status, "self-signed-certificates")' --model "temporal-server-uats-$(just get-model-suffix)" --error 'jubilant.any_error(status, "self-signed-certificates")' --timeout 600
+    timeout: 60000

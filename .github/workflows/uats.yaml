@@ -29,10 +29,18 @@ on:
           - candidate
           - stable
 
+env:
+  JUJU_CHANNEL: "3.6/stable"
+  POSTGRESQL_CHANNEL: "14/stable"
+  POSTGRESQL_FORCE: false
+
 jobs:
   uats:
     name: Run UATs
-    runs-on: ubuntu-latest
+    # Self-hosted runner for a stable egress IP: anonymous pulls of the rock
+    # base image from public.ecr.aws are data-quota'd per IP, and GitHub-hosted
+    # runners share IPs that are frequently already exhausted.
+    runs-on: self-hosted-linux-amd64-resolute-large
     timeout-minutes: 60
     strategy:
       matrix:
@@ -65,15 +73,17 @@ jobs:
           sudo chmod +x /usr/local/bin/goss
           /usr/local/bin/goss --version
 
-          sudo apt-get purge $(dpkg -l | grep -i docker | awk '{print $2}')
-          sudo apt-get purge containerd.io
-          sudo rm -r /run/containerd
+          sudo apt-get update
+          sudo apt-get purge -y $(dpkg -l | grep -i docker | awk '{print $2}') || true
+          sudo apt-get purge -y containerd.io || true
+          sudo rm -rf /run/containerd || true
 
           sudo snap install concierge --classic
-          sudo -E concierge prepare -c .github/workflows/custom-concierge.yaml
+          sudo -E concierge prepare -c .github/workflows/custom-concierge.yaml --juju-channel "$JUJU_CHANNEL"
           sudo k8s enable ingress
           sudo k8s kubectl config view --raw > ~/.kube/config
           uv tool install tox
+          uv tool install "jubilant>=1.13.0"
           just install-nginx-controller
 
       - name: Install docker (after k8s bootstrapped)
@@ -82,7 +92,13 @@ jobs:
           sudo snap start docker
 
       - name: Deploy Temporal models
-        run: just deploy-temporal ${{ inputs.server-track || '1.31' }} ${{ inputs.worker-track || '2.0' }} ${{ inputs.risk || 'edge' }}
+        run: >-
+          just deploy-temporal
+          ${{ inputs.server-track || '1.31' }}
+          ${{ inputs.worker-track || '2.0' }}
+          ${{ inputs.risk || 'edge' }}
+          "${{ env.POSTGRESQL_CHANNEL }}"
+          "${{ env.POSTGRESQL_FORCE }}"
 
       - name: Execute UATs
         run: just ${{ matrix.uat }}

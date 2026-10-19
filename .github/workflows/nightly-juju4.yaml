@@ -1,0 +1,60 @@
+# Copyright 2026 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+# Nightly UAT runs against Juju 4.x via the team's shared reusable workflow.
+# Each test command gets its own runner provisioned by concierge and deploys a
+# fresh Temporal stack before running its UAT category. Scheduled failures
+# open/update one issue labelled `juju-4`.
+#
+# Key differences vs a pull_request run of uats.yaml:
+#   - Juju channel: 4.1/edge, provisioned from custom-concierge.yaml
+#   - postgresql-k8s channel: 16/stable (14/stable does not support Juju 4)
+#   - postgresql-k8s deployed with --force to bypass base checks until the
+#     charm formally declares Juju 4 support
+
+name: Juju 4.x UATs
+
+on:
+  schedule:
+    # Run at 02:30 UTC every day
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  uats:
+    name: UATs [juju 4.x]
+    uses: canonical/workflows-team/.github/workflows/juju-nightly.yaml@main
+    with:
+      juju-channel: "4.1/edge"
+      # Tooling snaps (just, astral-uv, rockcraft, jq, yq, ...) are declared
+      # under host.snaps in custom-concierge.yaml.
+      concierge-config: .github/workflows/custom-concierge.yaml
+      provider: k8s
+      runner: self-hosted-linux-amd64-resolute-large
+      timeout-minutes: 120
+      extra-snaps: ""
+      free-disk-space: true
+      purge-docker: true
+      install-docker: true
+      # Mirrors the "Set up operator environment" step in uats.yaml. Runs on
+      # each runner after concierge provisions Juju and the k8s cloud.
+      setup-command: |
+        GOSS_VERSION="v0.4.10"
+        curl -fSL \
+          "https://github.com/goss-org/goss/releases/download/${GOSS_VERSION}/goss_${GOSS_VERSION#v}_linux_x86_64.tar.gz" \
+          -o /tmp/goss.tar.gz
+        sudo tar -xzf /tmp/goss.tar.gz -C /usr/local/bin goss
+        sudo chmod +x /usr/local/bin/goss
+        sudo k8s enable ingress
+        uv tool install tox
+        uv tool install "jubilant>=1.13.0"
+        just install-nginx-controller
+      test-commands: >-
+        ["just deploy-temporal 1.31 2.0 edge 16/stable true && just uats-namespace-isolation",
+        "just deploy-temporal 1.31 2.0 edge 16/stable true && just uats-ingress",
+        "just deploy-temporal 1.31 2.0 edge 16/stable true && just uats-cos"]
+      issue-label: juju-4
